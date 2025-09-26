@@ -281,7 +281,29 @@ class LoadScreenshots:
         self.frame += 1
         return [str(self.screen)], [im0], [s]  # screen, img, string
 
+def read_image(path, mode):
+    """
+    mode="tif"  : 读取tif文件
+    mode="npy"  : 读取npy文件
+    mode="img"  : 读取普通图像(jpg/png等)
+    """
 
+    if mode == "tif":
+        if path.lower().endswith(".tif"):
+            im_width, im_height, im_bands, projection, geotrans, im0 = readTif(path, band=3)
+        return im0
+
+    elif mode == "npy":
+        if path.lower().endswith(".npy"):
+            im0 = np.load(path.replace(".tif", ".npy"))
+        return im0
+
+    elif mode == "img":
+        im0 = cv2.imread(path)  # BGR
+        return im0
+
+    else:
+        raise ValueError(f"Unsupported mode: {mode}")
 class LoadImagesAndVideos:
     """
     A class for loading and processing images and videos for YOLO object detection.
@@ -422,10 +444,10 @@ class LoadImagesAndVideos:
                     with Image.open(path) as img:
                         im0 = cv2.cvtColor(np.asarray(img), cv2.COLOR_RGB2BGR)  # convert image to BGR nparray
                 else:
-                    if not path.lower().endswith(".tif"):
-                        im0 = imread(path)  # BGR
-                    else:
-                        im0 = readTif(path, bands=4)
+                    # im0 = cv2.imread(path)  # BGR
+                    # 读取npy文件
+                    # im0 = np.load(path.replace('.tif', '.npy'))
+                    im0 = read_image(path, mode="tif")  # 读取tif文件
                 if im0 is None:
                     LOGGER.warning(f"WARNING ⚠️ Image Read Error {path}")
                 else:

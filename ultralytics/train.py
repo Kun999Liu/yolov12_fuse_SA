@@ -17,11 +17,12 @@ model = YOLO("yolo12m.pt")
 
 # Train the model on the COCO8 example dataset for 100 epochs
 results = model.train(data=r"F:\my_code\yolov12\ultralytics\cfg\datasets\TransmissionTower.yaml",
-                      epochs=10,
+                      epochs=1,
                       imgsz=416,
                       device="0",
                       batch=16,
-                      name="TransmissionTower",)
+                      name="TransmissionTower",
+                      amp=False,)
 
 # import torch
 # print(torch.version.cuda)        # 查看编译时的 CUDA 版本
