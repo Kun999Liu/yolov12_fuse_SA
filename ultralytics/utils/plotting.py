@@ -144,7 +144,7 @@ class Colors:
     @staticmethod
     def hex2rgb(h):
         """Converts hex color codes to RGB values (i.e. default PIL order)."""
-        return tuple(int(h[1 + i : 1 + i + 2], 16) for i in (0, 2, 4))
+        return tuple(int(h[1 + i: 1 + i + 2], 16) for i in (0, 2, 4))
 
 
 colors = Colors()  # create instance for 'from utils.plots import colors'
@@ -760,7 +760,7 @@ class Annotator:
         return text_height
 
     def plot_angle_and_count_and_stage(
-        self, angle_text, count_text, stage_text, center_kpt, color=(104, 31, 17), txt_color=(255, 255, 255)
+            self, angle_text, count_text, stage_text, center_kpt, color=(104, 31, 17), txt_color=(255, 255, 255)
     ):
         """
         Plot the pose angle, count value, and step stage.
@@ -850,7 +850,7 @@ class Annotator:
             )
 
     def plot_distance_and_line(
-        self, pixels_distance, centroids, line_color=(104, 31, 17), centroid_color=(255, 0, 255)
+            self, pixels_distance, centroids, line_color=(104, 31, 17), centroid_color=(255, 0, 255)
     ):
         """
         Plot the distance and line on frame.
@@ -995,7 +995,7 @@ def save_one_box(xyxy, im, file=Path("im.jpg"), gain=1.02, pad=10, square=False,
     b[:, 2:] = b[:, 2:] * gain + pad  # box wh * gain + pad
     xyxy = ops.xywh2xyxy(b).long()
     xyxy = ops.clip_boxes(xyxy, im.shape)
-    crop = im[int(xyxy[0, 1]) : int(xyxy[0, 3]), int(xyxy[0, 0]) : int(xyxy[0, 2]), :: (1 if BGR else -1)]
+    crop = im[int(xyxy[0, 1]): int(xyxy[0, 3]), int(xyxy[0, 0]): int(xyxy[0, 2]), :: (1 if BGR else -1)]
     if save:
         file.parent.mkdir(parents=True, exist_ok=True)  # make directory
         f = str(increment_path(file).with_suffix(".jpg"))
@@ -1006,21 +1006,21 @@ def save_one_box(xyxy, im, file=Path("im.jpg"), gain=1.02, pad=10, square=False,
 
 @threaded
 def plot_images(
-    images: Union[torch.Tensor, np.ndarray],
-    batch_idx: Union[torch.Tensor, np.ndarray],
-    cls: Union[torch.Tensor, np.ndarray],
-    bboxes: Union[torch.Tensor, np.ndarray] = np.zeros(0, dtype=np.float32),
-    confs: Optional[Union[torch.Tensor, np.ndarray]] = None,
-    masks: Union[torch.Tensor, np.ndarray] = np.zeros(0, dtype=np.uint8),
-    kpts: Union[torch.Tensor, np.ndarray] = np.zeros((0, 51), dtype=np.float32),
-    paths: Optional[List[str]] = None,
-    fname: str = "images.jpg",
-    names: Optional[Dict[int, str]] = None,
-    on_plot: Optional[Callable] = None,
-    max_size: int = 1920,
-    max_subplots: int = 16,
-    save: bool = True,
-    conf_thres: float = 0.25,
+        images: Union[torch.Tensor, np.ndarray],
+        batch_idx: Union[torch.Tensor, np.ndarray],
+        cls: Union[torch.Tensor, np.ndarray],
+        bboxes: Union[torch.Tensor, np.ndarray] = np.zeros(0, dtype=np.float32),
+        confs: Optional[Union[torch.Tensor, np.ndarray]] = None,
+        masks: Union[torch.Tensor, np.ndarray] = np.zeros(0, dtype=np.uint8),
+        kpts: Union[torch.Tensor, np.ndarray] = np.zeros((0, 51), dtype=np.float32),
+        paths: Optional[List[str]] = None,
+        fname: str = "images.jpg",
+        names: Optional[Dict[int, str]] = None,
+        on_plot: Optional[Callable] = None,
+        max_size: int = 1920,
+        max_subplots: int = 16,
+        save: bool = True,
+        conf_thres: float = 0.25,
 ) -> Optional[np.ndarray]:
     """
     Plot image grid with labels, bounding boxes, masks, and keypoints.
@@ -1049,6 +1049,8 @@ def plot_images(
         This function supports both tensor and numpy array inputs. It will automatically
         convert tensor inputs to numpy arrays for processing.
     """
+    '''绘制图像只用前三个波段'''
+    images = images[:, :3, ...]
     if isinstance(images, torch.Tensor):
         images = images.cpu().float().numpy()
     if isinstance(cls, torch.Tensor):
@@ -1064,7 +1066,7 @@ def plot_images(
 
     bs, _, h, w = images.shape  # batch size, _, height, width
     bs = min(bs, max_subplots)  # limit plot images
-    ns = np.ceil(bs**0.5)  # number of subplots (square)
+    ns = np.ceil(bs ** 0.5)  # number of subplots (square)
     if np.max(images[0]) <= 1:
         images *= 255  # de-normalise (optional)
 
@@ -1072,7 +1074,7 @@ def plot_images(
     mosaic = np.full((int(ns * h), int(ns * w), 3), 255, dtype=np.uint8)  # init
     for i in range(bs):
         x, y = int(w * (i // ns)), int(h * (i % ns))  # block origin
-        mosaic[y : y + h, x : x + w, :] = images[i].transpose(1, 2, 0)
+        mosaic[y: y + h, x: x + w, :] = images[i].transpose(1, 2, 0)
 
     # Resize (optional)
     scale = max_size / ns / max(h, w)
@@ -1159,8 +1161,8 @@ def plot_images(
                         else:
                             mask = image_masks[j].astype(bool)
                         try:
-                            im[y : y + h, x : x + w, :][mask] = (
-                                im[y : y + h, x : x + w, :][mask] * 0.4 + np.array(color) * 0.6
+                            im[y: y + h, x: x + w, :][mask] = (
+                                    im[y: y + h, x: x + w, :][mask] * 0.4 + np.array(color) * 0.6
                             )
                         except Exception:
                             pass

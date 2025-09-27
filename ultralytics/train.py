@@ -11,6 +11,7 @@ Describe:
 from ultralytics import YOLO
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="albumentations.check_version")
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 #  Load a COCO-pretrained YOLO12n model
 model = YOLO("yolo12m.pt")
@@ -21,15 +22,36 @@ results = model.train(data=r"F:\my_code\yolov12\ultralytics\cfg\datasets\Transmi
                       imgsz=416,
                       device="0",
                       batch=16,
-                      name="TransmissionTower",
+                      name="TransmissionTower_test_once",
                       amp=False,
                       pretrained=False,  # 不加载官方权重
                       )
 
+
+
+# from ultralytics.data.utils import read_image
+# path = r"F:\my_code\datasets\train\images\GF2_PMS1_E93.5_N42.6_20250624_L1A14721219001_fuse_1_52.tif"
+# im_width, im_height, im_bands, projection, geotrans, im = read_image(path, 'tif')
+# print(type(im), im.shape, im.dtype)
+# import sys
 # import torch
-# print(torch.version.cuda)        # 查看编译时的 CUDA 版本
-# print(torch.cuda.is_available()) # 查看是否能用 CUDA
-# print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else "No CUDA")
-# import albumentations as A
-# help(A.ImageCompression)
-'''测试git上传'''
+#
+# # Python 版本
+# print("Python Version:", sys.version)
+#
+# # PyTorch 版本
+# print("PyTorch Version:", torch.__version__)
+#
+# # CUDA 可用性
+# print("CUDA Available:", torch.cuda.is_available())
+#
+# # CUDA 设备数量
+# print("Number of CUDA devices:", torch.cuda.device_count())
+#
+# # 每个 CUDA 设备信息
+# for i in range(torch.cuda.device_count()):
+#     print(f"Device {i}: {torch.cuda.get_device_name(i)}")
+#
+# # PyTorch 编译时 CUDA 版本
+# print("PyTorch CUDA Version:", torch.version.cuda)
+# '''测试git上传'''

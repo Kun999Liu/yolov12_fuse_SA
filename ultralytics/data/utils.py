@@ -43,16 +43,24 @@ PIN_MEMORY = str(os.getenv("PIN_MEMORY", True)).lower() == "true"  # global pin_
 FORMATS_HELP_MSG = f"Supported formats are:\nimages: {IMG_FORMATS}\nvideos: {VID_FORMATS}"
 
 
-def read_image(path, mode):
+def read_image(path, mode, **kwargs):
     """
     mode="tif"  : 读取tif文件
     mode="npy"  : 读取npy文件
     mode="img"  : 读取普通图像(jpg/png等)
     """
+    '''
+    Args:
+        path: 图像路径
+        mode: 读取模式，tif/npy/img
+        **kwargs: 其他参数
+    '''
+    '''bands: 波段数默认为加载3波段图像'''
+    bands = kwargs.get("bands", 3)
 
     if mode == "tif":
         if path.lower().endswith(".tif"):
-            im_width, im_height, im_bands, projection, geotrans, im0 = readTif(path)
+            im_width, im_height, im_bands, projection, geotrans, im0 = readTif(path, bands)
         return im_width, im_height, im_bands, projection, geotrans, im0
 
     elif mode == "npy":
@@ -92,7 +100,7 @@ def readTif(img_file_path, bands=3):
     if im_bands == 1:
         img_array = np.tile(img_array, (3, 1, 1))
     if bands == 3 and im_bands >= 3:
-        img_array = img_array[:3, :, :]  # 取R G B三个波段
+        img_array = img_array[:3, :, :].copy()  # 取R G B三个波段
         im_bands = 3
     elif im_bands >= 4 and bands == 4:
         img_array = img_array[:4, :, :]
@@ -144,7 +152,6 @@ def verify_image(args):
         # im = Image.open(im_file)
         im_width, im_height, im_bands, projection, geotrans, im = read_image(im_file, 'tif')
         shape = exif_size(im)  # image size
-        print(shape)
         shape = (shape[1], shape[0])  # hw
         # im.verify()  # PIL verify
         # shape = exif_size(im)  # image size
@@ -174,7 +181,6 @@ def verify_image_label(args):
         ''' 更改读取方式'''
         im_width, im_height, im_bands, projection, geotrans, im = read_image(im_file, 'tif')
         shape = (im_height, im_width)  # hw
-        print(shape)
         # im = Image.open(im_file)
         # im.verify()  # PIL verify
         # shape = exif_size(im)  # image size

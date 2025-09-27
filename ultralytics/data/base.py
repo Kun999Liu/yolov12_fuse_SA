@@ -152,16 +152,20 @@ class BaseDataset(Dataset):
         """Loads 1 image from dataset index 'i', returns (im, resized hw)."""
         im, f, fn = self.ims[i], self.im_files[i], self.npy_files[i]
         if im is None:  # not cached in RAM
+            '''如果存在npy文件，则加载npy文件，否则读取图像文件'''
             if fn.exists():  # load npy
                 try:
-                    im = np.load(fn)
+                    if f.lower().endswith(".tif"):  # load tif
+                        im_width, im_height, im_bands, projection, geotrans, im = read_image(f, mode="tif")  # 读取tif文件
+                    else:  # load npy
+                        im = np.load(fn)
                 except Exception as e:
                     LOGGER.warning(f"{self.prefix}WARNING ⚠️ Removing corrupt *.npy image file {fn} due to: {e}")
                     Path(fn).unlink(missing_ok=True)
                     im = cv2.imread(f)  # BGR
             else:  # read image
                 # im = cv2.imread(f)  # BGR
-                im = read_image(f, mode="tif")  # 读取tif文件
+                im_width, im_height, im_bands, projection, geotrans, im = read_image(f, mode="tif")  # 读取tif文件
 
             if im is None:
                 raise FileNotFoundError(f"Image Not Found {f}")

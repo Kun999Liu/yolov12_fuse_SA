@@ -425,7 +425,7 @@ class LoadImagesAndVideos:
                     # im0 = cv2.imread(path)  # BGR
                     # 读取npy文件
                     # im0 = np.load(path.replace('.tif', '.npy'))
-                    im0 = read_image(path, mode="tif")  # 读取tif文件
+                    im_width, im_height, im_bands, projection, geotrans, im0 = read_image(path, mode="tif")  # 读取tif文件
                 if im0 is None:
                     LOGGER.warning(f"WARNING ⚠️ Image Read Error {path}")
                 else:
