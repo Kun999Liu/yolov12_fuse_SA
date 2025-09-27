@@ -42,6 +42,32 @@ VID_FORMATS = {"asf", "avi", "gif", "m4v", "mkv", "mov", "mp4", "mpeg", "mpg", "
 PIN_MEMORY = str(os.getenv("PIN_MEMORY", True)).lower() == "true"  # global pin_memory for dataloaders
 FORMATS_HELP_MSG = f"Supported formats are:\nimages: {IMG_FORMATS}\nvideos: {VID_FORMATS}"
 
+
+def read_image(path, mode):
+    """
+    mode="tif"  : 读取tif文件
+    mode="npy"  : 读取npy文件
+    mode="img"  : 读取普通图像(jpg/png等)
+    """
+
+    if mode == "tif":
+        if path.lower().endswith(".tif"):
+            im_width, im_height, im_bands, projection, geotrans, im0 = readTif(path)
+        return im_width, im_height, im_bands, projection, geotrans, im0
+
+    elif mode == "npy":
+        if path.lower().endswith(".npy"):
+            im0 = np.load(path.replace(".tif", ".npy"))
+        return im0
+
+    elif mode == "img":
+        im0 = cv2.imread(path)  # BGR
+        return im0
+
+    else:
+        raise ValueError(f"Unsupported mode: {mode}")
+
+
 def readTif(img_file_path, bands=3):
     """
     读取栅格数据，将其转换成对应数组
@@ -51,8 +77,7 @@ def readTif(img_file_path, bands=3):
     dataset = gdal.Open(img_file_path)  # 读取栅格数据
     # 判断是否读取到数据
     if dataset is None:
-        print('Unable to open *.tif')
-        sys.exit(1)  # 退出
+        raise FileNotFoundError(f"Unable to open {img_file_path}")
     projection = dataset.GetProjection()  # 投影
     geotrans = dataset.GetGeoTransform()  # 几何信息
     im_width = dataset.RasterXSize  # 栅格矩阵的列数
@@ -61,33 +86,26 @@ def readTif(img_file_path, bands=3):
     # print(im_bands)
     # 直接读取dataset
     img_array = dataset.ReadAsArray()
+    if img_array is None:
+        raise ValueError(f"ReadAsArray failed for {img_file_path}")
     # 归一化
-
     if im_bands == 1:
         img_array = np.tile(img_array, (3, 1, 1))
     if bands == 3 and im_bands >= 3:
         img_array = img_array[:3, :, :]  # 取R G B三个波段
         im_bands = 3
     elif im_bands >= 4 and bands == 4:
-        img_array = dataset.ReadAsArray(0, 0, im_width, im_height)
-
-    # img_array = img_array[:3, :, :]  # 取R G B三个波段
-    # # img_array = img_array[1:4, :, :]  # 取G B NIR三个波段
-    # # # img_array = img_array[[0,1,3], :, :]  # 取R G NIR三个波段
-    # # img_array = img_array[[0, 2, 3], :, :] # 取b r NIR三个波段
-    # im_bands = 3
+        img_array = img_array[:4, :, :]
+        im_bands = 4
     '''校正后处理'''
-    # imgScale = img_array / 10000
-    # img = imgScale * 255
-
     imgScale = (img_array - np.min(img_array)) / (np.max(img_array) - np.min(img_array))
-    img = imgScale * 255
-    img = np.round(img).astype(np.uint8)
 
+    img = np.round(imgScale * 255).astype(np.uint8)
     # TIS GIU 使用
     img = np.transpose(img, (1, 2, 0))
     # img = histEqualize(img)
     return im_width, im_height, im_bands, projection, geotrans, img
+
 
 def img2label_paths(img_paths):
     """Define label paths as a function of image paths."""
@@ -123,18 +141,22 @@ def verify_image(args):
     # Number (found, corrupt), message
     nf, nc, msg = 0, 0, ""
     try:
-        im = Image.open(im_file)
-        im.verify()  # PIL verify
+        # im = Image.open(im_file)
+        im_width, im_height, im_bands, projection, geotrans, im = read_image(im_file, 'tif')
         shape = exif_size(im)  # image size
+        print(shape)
         shape = (shape[1], shape[0])  # hw
-        assert (shape[0] > 9) & (shape[1] > 9), f"image size {shape} <10 pixels"
-        assert im.format.lower() in IMG_FORMATS, f"Invalid image format {im.format}. {FORMATS_HELP_MSG}"
-        if im.format.lower() in {"jpg", "jpeg"}:
-            with open(im_file, "rb") as f:
-                f.seek(-2, 2)
-                if f.read() != b"\xff\xd9":  # corrupt JPEG
-                    ImageOps.exif_transpose(Image.open(im_file)).save(im_file, "JPEG", subsampling=0, quality=100)
-                    msg = f"{prefix}WARNING ⚠️ {im_file}: corrupt JPEG restored and saved"
+        # im.verify()  # PIL verify
+        # shape = exif_size(im)  # image size
+        # shape = (shape[1], shape[0])  # hw
+        # assert (shape[0] > 9) & (shape[1] > 9), f"image size {shape} <10 pixels"
+        # assert im.format.lower() in IMG_FORMATS, f"Invalid image format {im.format}. {FORMATS_HELP_MSG}"
+        # if im.format.lower() in {"jpg", "jpeg"}:
+        #     with open(im_file, "rb") as f:
+        #         f.seek(-2, 2)
+        #         if f.read() != b"\xff\xd9":  # corrupt JPEG
+        #             ImageOps.exif_transpose(Image.open(im_file)).save(im_file, "JPEG", subsampling=0, quality=100)
+        #             msg = f"{prefix}WARNING ⚠️ {im_file}: corrupt JPEG restored and saved"
         nf = 1
     except Exception as e:
         nc = 1
@@ -149,18 +171,22 @@ def verify_image_label(args):
     nm, nf, ne, nc, msg, segments, keypoints = 0, 0, 0, 0, "", [], None
     try:
         # Verify images
-        im = Image.open(im_file)
-        im.verify()  # PIL verify
-        shape = exif_size(im)  # image size
-        shape = (shape[1], shape[0])  # hw
-        assert (shape[0] > 9) & (shape[1] > 9), f"image size {shape} <10 pixels"
-        assert im.format.lower() in IMG_FORMATS, f"invalid image format {im.format}. {FORMATS_HELP_MSG}"
-        if im.format.lower() in {"jpg", "jpeg"}:
-            with open(im_file, "rb") as f:
-                f.seek(-2, 2)
-                if f.read() != b"\xff\xd9":  # corrupt JPEG
-                    ImageOps.exif_transpose(Image.open(im_file)).save(im_file, "JPEG", subsampling=0, quality=100)
-                    msg = f"{prefix}WARNING ⚠️ {im_file}: corrupt JPEG restored and saved"
+        ''' 更改读取方式'''
+        im_width, im_height, im_bands, projection, geotrans, im = read_image(im_file, 'tif')
+        shape = (im_height, im_width)  # hw
+        print(shape)
+        # im = Image.open(im_file)
+        # im.verify()  # PIL verify
+        # shape = exif_size(im)  # image size
+        # shape = (shape[1], shape[0])  # hw
+        # assert (shape[0] > 9) & (shape[1] > 9), f"image size {shape} <10 pixels"
+        # assert im.format.lower() in IMG_FORMATS, f"invalid image format {im.format}. {FORMATS_HELP_MSG}"
+        # if im.format.lower() in {"jpg", "jpeg"}:
+        #     with open(im_file, "rb") as f:
+        #         f.seek(-2, 2)
+        #         if f.read() != b"\xff\xd9":  # corrupt JPEG
+        #             ImageOps.exif_transpose(Image.open(im_file)).save(im_file, "JPEG", subsampling=0, quality=100)
+        #             msg = f"{prefix}WARNING ⚠️ {im_file}: corrupt JPEG restored and saved"
 
         # Verify labels
         if os.path.isfile(lb_file):

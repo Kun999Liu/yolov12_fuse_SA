@@ -9,7 +9,6 @@ import torch
 from PIL import Image
 
 from huggingface_hub import PyTorchModelHubMixin
-
 from ultralytics.cfg import TASK2DATA, get_cfg, get_save_dir
 from ultralytics.engine.results import Results
 from ultralytics.hub import HUB_WEB_ROOT, HUBTrainingSession

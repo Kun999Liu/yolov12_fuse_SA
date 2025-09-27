@@ -14,7 +14,7 @@ import numpy as np
 import psutil
 from torch.utils.data import Dataset
 
-from ultralytics.data.utils import FORMATS_HELP_MSG, HELP_URL, IMG_FORMATS
+from ultralytics.data.utils import FORMATS_HELP_MSG, HELP_URL, IMG_FORMATS, read_image
 from ultralytics.utils import DEFAULT_CFG, LOCAL_RANK, LOGGER, NUM_THREADS, TQDM
 
 
@@ -160,7 +160,9 @@ class BaseDataset(Dataset):
                     Path(fn).unlink(missing_ok=True)
                     im = cv2.imread(f)  # BGR
             else:  # read image
-                im = cv2.imread(f)  # BGR
+                # im = cv2.imread(f)  # BGR
+                im = read_image(f, mode="tif")  # 读取tif文件
+
             if im is None:
                 raise FileNotFoundError(f"Image Not Found {f}")
 

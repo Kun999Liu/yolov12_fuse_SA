@@ -19,7 +19,7 @@ from ultralytics.data.utils import FORMATS_HELP_MSG, IMG_FORMATS, VID_FORMATS
 from ultralytics.utils import IS_COLAB, IS_KAGGLE, LOGGER, ops
 from ultralytics.utils.checks import check_requirements
 from ultralytics.utils.patches import imread
-from ultralytics.data.utils import readTif
+from ultralytics.data.utils import read_image
 
 
 @dataclass
@@ -281,29 +281,7 @@ class LoadScreenshots:
         self.frame += 1
         return [str(self.screen)], [im0], [s]  # screen, img, string
 
-def read_image(path, mode):
-    """
-    mode="tif"  : 读取tif文件
-    mode="npy"  : 读取npy文件
-    mode="img"  : 读取普通图像(jpg/png等)
-    """
 
-    if mode == "tif":
-        if path.lower().endswith(".tif"):
-            im_width, im_height, im_bands, projection, geotrans, im0 = readTif(path, band=3)
-        return im0
-
-    elif mode == "npy":
-        if path.lower().endswith(".npy"):
-            im0 = np.load(path.replace(".tif", ".npy"))
-        return im0
-
-    elif mode == "img":
-        im0 = cv2.imread(path)  # BGR
-        return im0
-
-    else:
-        raise ValueError(f"Unsupported mode: {mode}")
 class LoadImagesAndVideos:
     """
     A class for loading and processing images and videos for YOLO object detection.

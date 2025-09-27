@@ -22,7 +22,9 @@ results = model.train(data=r"F:\my_code\yolov12\ultralytics\cfg\datasets\Transmi
                       device="0",
                       batch=16,
                       name="TransmissionTower",
-                      amp=False,)
+                      amp=False,
+                      pretrained=False,  # 不加载官方权重
+                      )
 
 # import torch
 # print(torch.version.cuda)        # 查看编译时的 CUDA 版本
