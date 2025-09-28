@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/yolov12.iml" filepath="$PROJECT_DIR$/.idea/yolov12.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/yolov12_fuse_SA.iml" filepath="$PROJECT_DIR$/.idea/yolov12_fuse_SA.iml" />
     </modules>
   </component>
 </project>

@@ -2,7 +2,7 @@
 # @Time    : 2025/8/30 12:13
 # @Author  : Liu Kun
 # @Email   : liukunjsj@163.com
-# @File    : train_yolov11.py
+# @File    : train.py
 # @Software: PyCharm
 
 """
@@ -15,14 +15,16 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 #  Load a COCO-pretrained YOLO12n model
 model = YOLO("yolo12m.pt")
-
+# data=r"F:\my_code\yolov12\ultralytics\cfg\datasets\TransmissionTower.yaml",
 # Train the model on the COCO8 example dataset for 100 epochs
-results = model.train(data=r"F:\my_code\yolov12\ultralytics\cfg\datasets\TransmissionTower.yaml",
-                      epochs=1,
+results = model.train(data=r'D:\Git\yolov12_fuse_SA\ultralytics\cfg\datasets\TransmissionTower.yaml',
+                      epochs=500,
+                      patience=80,
                       imgsz=416,
-                      device="0",
+                      workers=8,
+                      device="1",
                       batch=16,
-                      name="TransmissionTower_test_once",
+                      name="TransmissionTower_3bands_500epochs",
                       amp=False,
                       pretrained=False,  # 不加载官方权重
                       )

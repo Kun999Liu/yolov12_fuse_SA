@@ -1,4 +1,5 @@
-path: F:/my_code/datasets # dataset root dir
+#path: F:/my_code/datasets # dataset root dir
+path: D:/windfram&tower/datasets
 train: train/images # train images (relative to 'path') 128 images
 val: val/images # val images (relative to 'path') 128 images
 test: test/images # test images (optional)
