@@ -2,7 +2,7 @@
 # @Time    : 2025/8/30 12:13
 # @Author  : Liu Kun
 # @Email   : liukunjsj@163.com
-# @File    : train.py
+# @File    : train_yolov12.py
 # @Software: PyCharm
 
 """
