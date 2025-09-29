@@ -19,7 +19,7 @@ model = YOLO("yolo12m.pt")
 # Train the model on the COCO8 example dataset for 100 epochs
 results = model.train(data=r'D:\Git\yolov12_fuse_SA\ultralytics\cfg\datasets\TransmissionTower.yaml',
                       epochs=500,
-                      patience=100,
+                      patience=150,
                       imgsz=416,
                       workers=8,
                       device="1",
