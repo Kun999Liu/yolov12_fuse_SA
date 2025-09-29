@@ -57,3 +57,5 @@ results = model.train(data=r'D:\Git\yolov12_fuse_SA\ultralytics\cfg\datasets\Tra
 # # PyTorch 编译时 CUDA 版本
 # print("PyTorch CUDA Version:", torch.version.cuda)
 # '''测试git上传'''
+
+'''测试git上传--Aircas_laptop'''
