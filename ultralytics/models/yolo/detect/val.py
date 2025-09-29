@@ -69,9 +69,9 @@ class DetectionValidator(BaseValidator):
         """Initialize evaluation metrics for YOLO."""
         val = self.data.get(self.args.split, "")  # validation path
         self.is_coco = (
-            isinstance(val, str)
-            and "coco" in val
-            and (val.endswith(f"{os.sep}val2017.txt") or val.endswith(f"{os.sep}test-dev2017.txt"))
+                isinstance(val, str)
+                and "coco" in val
+                and (val.endswith(f"{os.sep}val2017.txt") or val.endswith(f"{os.sep}test-dev2017.txt"))
         )  # is COCO
         self.is_lvis = isinstance(val, str) and "lvis" in val and not self.is_coco  # is LVIS
         self.class_map = converter.coco80_to_coco91_class() if self.is_coco else list(range(1, len(model.names) + 1))
@@ -156,7 +156,9 @@ class DetectionValidator(BaseValidator):
             if nl:
                 stat["tp"] = self._process_batch(predn, bbox, cls)
             if self.args.plots:
-                self.confusion_matrix.process_batch(predn, bbox, cls)
+                '''修改代码  用于混淆举证'''
+                file_path = f'{Path(batch["im_file"][si]).stem}.txt'
+                self.confusion_matrix.process_batch(predn, bbox, cls, file_dir=self.save_dir, file_name=file_path)
             for k in self.stats.keys():
                 self.stats[k].append(stat[k])
 
@@ -191,7 +193,8 @@ class DetectionValidator(BaseValidator):
         pf = "%22s" + "%11i" * 2 + "%11.3g" * len(self.metrics.keys)  # print format
         LOGGER.info(pf % ("all", self.seen, self.nt_per_class.sum(), *self.metrics.mean_results()))
         if self.nt_per_class.sum() == 0:
-            LOGGER.warning(f"WARNING ⚠️ no labels found in {self.args.task} set, can not compute metrics without labels")
+            LOGGER.warning(
+                f"WARNING ⚠️ no labels found in {self.args.task} set, can not compute metrics without labels")
 
         # Print results per class
         if self.args.verbose and not self.training and self.nc > 1 and len(self.stats):
@@ -299,9 +302,9 @@ class DetectionValidator(BaseValidator):
         if self.args.save_json and (self.is_coco or self.is_lvis) and len(self.jdict):
             pred_json = self.save_dir / "predictions.json"  # predictions
             anno_json = (
-                self.data["path"]
-                / "annotations"
-                / ("instances_val2017.json" if self.is_coco else f"lvis_v1_{self.args.split}.json")
+                    self.data["path"]
+                    / "annotations"
+                    / ("instances_val2017.json" if self.is_coco else f"lvis_v1_{self.args.split}.json")
             )  # annotations
             pkg = "pycocotools" if self.is_coco else "lvis"
             LOGGER.info(f"\nEvaluating {pkg} mAP using {pred_json} and {anno_json}...")

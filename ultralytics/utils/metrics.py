@@ -2,6 +2,7 @@
 """Model validation metrics."""
 
 import math
+import os
 import warnings
 from pathlib import Path
 
@@ -323,7 +324,7 @@ class ConfusionMatrix:
         for p, t in zip(preds.cpu().numpy(), targets.cpu().numpy()):
             self.matrix[p][t] += 1
 
-    def process_batch(self, detections, gt_bboxes, gt_cls):
+    def process_batch(self, detections, gt_bboxes, gt_cls, **kwargs):
         """
         Update confusion matrix for object detection task.
 
@@ -334,17 +335,29 @@ class ConfusionMatrix:
             gt_bboxes (Array[M, 4]| Array[N, 5]): Ground truth bounding boxes with xyxy/xyxyr format.
             gt_cls (Array[M]): The class labels.
         """
+        file_dir = kwargs["file_dir"]
+        file_name = kwargs["file_name"]
         if gt_cls.shape[0] == 0:  # Check if labels is empty
             if detections is not None:
                 detections = detections[detections[:, 4] > self.conf]
                 detection_classes = detections[:, 5].int()
                 for dc in detection_classes:
                     self.matrix[dc, self.nc] += 1  # false positives
+                if file_dir is not None and file_name is not None:
+                    if not os.path.exists(file_dir / 'errorfile' / 'FP'):
+                        os.makedirs(file_dir / 'errorfile' / 'FP')
+                    with open(file_dir / 'errorfile' / 'FP' / file_name, 'a') as f:
+                        f.write(f'{file_name}: 预测错误，没有目标但预测出来了！')
             return
         if detections is None:
             gt_classes = gt_cls.int()
             for gc in gt_classes:
                 self.matrix[self.nc, gc] += 1  # background FN
+            if file_dir is not None and file_name is not None:
+                if not os.path.exists(file_dir / 'errorfile' / 'FN'):
+                    os.makedirs(file_dir / 'errorfile' / 'FN')
+                with open(file_dir / 'errorfile' / 'FN' / file_name, 'a') as f:
+                    f.write(f'{file_name}: 预测错误，有目标但没预测出来！')
             return
 
         detections = detections[detections[:, 4] > self.conf]
@@ -376,10 +389,22 @@ class ConfusionMatrix:
                 self.matrix[detection_classes[m1[j]], gc] += 1  # correct
             else:
                 self.matrix[self.nc, gc] += 1  # true background
+                if file_dir is not None and file_name is not None:
+                    if not os.path.exists(file_dir / 'errorfile' / 'FN'):
+                        os.makedirs(file_dir / 'errorfile' / 'FN')
+                    with open(file_dir / 'errorfile' / 'FN' / file_name, 'a') as f:
+                        f.write(f'{file_name}: 有目标但没预测出来！')
+
 
         for i, dc in enumerate(detection_classes):
             if not any(m1 == i):
                 self.matrix[dc, self.nc] += 1  # predicted background
+                if file_dir is not None and file_name is not None:
+                    if not os.path.exists(file_dir / 'errorfile' / 'FP'):
+                        os.makedirs(file_dir / 'errorfile' / 'FP')
+                    with open(file_dir / 'errorfile' / 'FP' / file_name, 'a') as f:
+                        f.write(f'{file_name}: 没有目标但预测出来了！')
+
 
     def matrix(self):
         """Returns the confusion matrix."""
