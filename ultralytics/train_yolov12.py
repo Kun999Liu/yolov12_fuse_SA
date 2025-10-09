@@ -30,10 +30,10 @@ results = model.train(data=r'D:\Git\yolov12_fuse_SA\ultralytics\cfg\datasets\Tra
                       )
 
 
-
 # from ultralytics.data.utils import read_image
-# path = r"F:\my_code\datasets\train\images\GF2_PMS1_E93.5_N42.6_20250624_L1A14721219001_fuse_1_52.tif"
-# im_width, im_height, im_bands, projection, geotrans, im = read_image(path, 'tif')
+# path = r"D:\yolodatasets\datasets_2m\train\images\GF2_PMS1_E93.5_N42.6_20250624_L1A14721219001_fuse_8_28.tif"
+# im_width, im_height, im_bands, projection, geotrans, im = read_image(path, 'tif', bands=4)
+# print(im_width, im_height, im_bands, projection, geotrans, im)
 # print(type(im), im.shape, im.dtype)
 # import sys
 # import torch
