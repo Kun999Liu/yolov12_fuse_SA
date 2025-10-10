@@ -22,7 +22,7 @@ results = model.train(data=r'D:\Git\yolov12_fuse_SA\ultralytics\cfg\datasets\Tra
                       patience=10,
                       imgsz=416,
                       workers=0,
-                      device="cpu",
+                      device="1",
                       batch=16,
                       name="TransmissionTower_3bands_M_1epoch_test",
                       amp=False,
