@@ -51,11 +51,11 @@ def downsample_geotiff(in_path, out_path, scale=2.0, resample_alg='average', log
         )
 
         ds = None
-        log_message(log_file, f"✅ 成功: {in_path}")
+        log_message(log_file, f"成功: {in_path}")
         return True
 
     except Exception as e:
-        log_message(log_file, f"❌ 失败: {in_path} | 错误: {e}")
+        log_message(log_file, f"失败: {in_path} | 错误: {e}")
         return False
 
 
@@ -65,7 +65,7 @@ def downsample_geotiff_folder(input_folder, output_folder, scale=2.0, resample_a
     tif_files = [f for f in os.listdir(input_folder) if f.lower().endswith(".tif")]
 
     if not tif_files:
-        log_message(log_file, f"⚠️ 空文件夹: {input_folder}")
+        log_message(log_file, f"空文件夹: {input_folder}")
         return
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -75,7 +75,7 @@ def downsample_geotiff_folder(input_folder, output_folder, scale=2.0, resample_a
             out_path = os.path.join(output_folder, fname)
 
             if os.path.exists(out_path):
-                log_message(log_file, f"⏭️ 跳过(已存在): {out_path}")
+                log_message(log_file, f"跳过(已存在): {out_path}")
                 continue
 
             futures.append(executor.submit(downsample_geotiff, in_path, out_path, scale, resample_alg, log_file))
@@ -95,9 +95,9 @@ def copy_label_folder(input_label_folder, output_label_folder, log_file=None):
         dst = os.path.join(output_label_folder, fname)
         try:
             shutil.copy(src, dst)
-            log_message(log_file, f"📄 拷贝标签: {fname}")
+            log_message(log_file, f"拷贝标签: {fname}")
         except Exception as e:
-            log_message(log_file, f"❌ 标签复制失败: {fname} | {e}")
+            log_message(log_file, f"标签复制失败: {fname} | {e}")
 
 
 # ========== 主程序 ==========
@@ -126,8 +126,8 @@ def process_yolo_dataset(base_input_dir, base_output_dir, scale=2.0, resample_al
         if os.path.exists(lbl_input):
             copy_label_folder(lbl_input, lbl_output, log_file)
 
-    log_message(log_file, "✅ 全部处理完成！")
-    print(f"\n✅ 处理完成，日志已保存：{log_file}")
+    log_message(log_file, "全部处理完成！")
+    print(f"\n处理完成，日志已保存：{log_file}")
 
 
 # ========== 程序入口 ==========
