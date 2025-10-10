@@ -26,7 +26,7 @@ results = model.train(data=r'D:\Git\yolov12_fuse_SA\ultralytics\cfg\datasets\Tra
                       batch=16,
                       name="TransmissionTower_3bands_M_1epoch_test",
                       amp=False,
-                      # pretrained=False,  # 不加载官方权重
+                      pretrained=False,  # 不加载官方权重
                       )
 
 
