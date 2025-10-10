@@ -1,5 +1,6 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 """Block modules."""
+import math
 
 import torch
 import torch.nn as nn
@@ -11,6 +12,9 @@ from .conv import Conv, DWConv, GhostConv, LightConv, RepConv, autopad
 from .transformer import TransformerBlock
 
 __all__ = (
+    "SA_C1",
+    "SA",
+    "ECASA",
     "DFL",
     "HGBlock",
     "HGStem",
@@ -51,6 +55,60 @@ __all__ = (
     "SCDown",
     "TorchVision",
 )
+
+from ...utils.ndvi import NDSI_Layer
+
+class SA_C1(nn.Module):
+    def __init__(self, c2):
+        super().__init__()
+
+    def forward(self, x):
+        return x
+
+class SA(nn.Module):
+    def __init__(self, c2):
+        super(SA, self).__init__()
+        # c1 = 3
+        # 6通道
+        c1 = 6
+        self.ndsi_layer = NDSI_Layer()
+        self.ecasa = ECASA(c1)
+        self.conv1x1 = nn.Conv2d(c1, c2, kernel_size=1)
+        self.down1 = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.down2 = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.down3 = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.down4 = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.down5 = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+
+    def forward(self, x):
+        B, C, _, _ = x.size()
+        ndsi_out = self.ndsi_layer(x)
+        ecasa_out = self.ecasa(ndsi_out)
+        conv1x1_out = self.conv1x1(ecasa_out)
+        out1 = self.down3(self.down2(self.down1(conv1x1_out)))
+        return out1
+
+
+class ECASA(nn.Module):
+    def __init__(self, channel, gamma=2, b=1):
+        super(ECASA, self).__init__()
+        t = int(abs((math.log(channel, 2) + b) / gamma))  # 自适应计算卷积核大小
+        k_size = t if t % 2 else t + 1  # k_size
+        self.avg = nn.AdaptiveAvgPool2d(1)  # 全局平均池化层
+        self.max = nn.AdaptiveMaxPool2d(1)
+        # 1D卷积用于处理通道间的关系，核大小可调，padding保证输出通道数不变
+        self.conv = nn.Conv1d(1, 1, kernel_size=k_size, padding=(k_size - 1) // 2, bias=False)
+        self.sig = nn.Sigmoid()
+
+    def forward(self, x):
+        b, c, h, w = x.size()  # (1,6,416,416)
+        avg_out = self.avg(x)
+        max_out = self.max(x)
+        avgweight = self.conv(avg_out.squeeze(-1).transpose(-1, -2)).transpose(-1, -2).unsqueeze(-1)
+        maxweight = self.conv(max_out.squeeze(-1).transpose(-1, -2)).transpose(-1, -2).unsqueeze(-1)
+        y = self.sig(avgweight+maxweight).view([b, c, 1, 1])
+        out = x * y
+        return out
 
 
 class DFL(nn.Module):

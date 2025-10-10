@@ -1,5 +1,6 @@
 #path: F:/my_code/datasets # dataset root dir
-path: D:/windfram&tower/datasets
+#path: D:/windfram&tower/datasets
+path: D:/yolodatasets/datasets
 train: train/images # train images (relative to 'path') 128 images
 val: val/images # val images (relative to 'path') 128 images
 test: test/images # test images (optional)

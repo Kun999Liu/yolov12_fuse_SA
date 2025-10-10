@@ -132,10 +132,10 @@ def process_yolo_dataset(base_input_dir, base_output_dir, scale=2.0, resample_al
 
 # ========== 程序入口 ==========
 if __name__ == "__main__":
-    base_input_dir = r"D:\YOLO_dataset"          # 原始 YOLO 数据集根目录
-    base_output_dir = r"D:\YOLO_dataset_2m"      # 输出目录
+    base_input_dir = r"D:\yolodatasets\datasets"         # 原始 YOLO 数据集根目录
+    base_output_dir = r"D:\yolodatasets\datasets_2m"      # 输出目录
     scale = 2.0                                  # 分辨率比例 (1m → 2m)
     resample_alg = "average"                     # 可选: nearest, bilinear, cubic, average, mode, etc.
-    max_workers = 8                              # 并行线程数
+    max_workers = 2                              # 并行线程数
 
     process_yolo_dataset(base_input_dir, base_output_dir, scale, resample_alg, max_workers)

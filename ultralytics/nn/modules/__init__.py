@@ -18,6 +18,9 @@ Example:
 """
 
 from .block import (
+    SA_C1,
+    SA,
+    ECASA,
     C1,
     C2,
     C2PSA,
@@ -90,6 +93,9 @@ from .transformer import (
 )
 
 __all__ = (
+    "SA_C1",
+    "SA",
+    "ECASA",
     "Conv",
     "Conv2",
     "LightConv",
