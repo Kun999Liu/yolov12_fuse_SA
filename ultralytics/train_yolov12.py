@@ -18,15 +18,15 @@ model = YOLO("yolo12m.pt")
 # data=r"F:\my_code\yolov12\ultralytics\cfg\datasets\TransmissionTower.yaml",
 # Train the model on the COCO8 example dataset for 100 epochs
 results = model.train(data=r'D:\Git\yolov12_fuse_SA\ultralytics\cfg\datasets\TransmissionTower.yaml',
-                      epochs=500,
-                      patience=150,
+                      epochs=1,
+                      patience=10,
                       imgsz=416,
-                      workers=8,
-                      device="1",
+                      workers=0,
+                      device="cpu",
                       batch=16,
-                      name="TransmissionTower_3bands_M_500epochs",
+                      name="TransmissionTower_3bands_M_1epoch_test",
                       amp=False,
-                      pretrained=False,  # 不加载官方权重
+                      # pretrained=False,  # 不加载官方权重
                       )
 
 
