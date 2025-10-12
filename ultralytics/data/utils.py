@@ -61,7 +61,7 @@ def read_image(path, mode, **kwargs):
     if mode == "tif":
         if path.lower().endswith(".tif"):
             im_width, im_height, im_bands, projection, geotrans, im0 = readTif(path, bands)
-        return im_width, im_height, im_bands, projection, geotrans, im0
+        return im0
 
     elif mode == "npy":
         if path.lower().endswith(".npy"):
@@ -150,9 +150,9 @@ def verify_image(args):
     nf, nc, msg = 0, 0, ""
     try:
         # im = Image.open(im_file)
-        im_width, im_height, im_bands, projection, geotrans, im = read_image(im_file, 'tif')
-        shape = exif_size(im)  # image size
-        shape = (shape[1], shape[0])  # hw
+        im = read_image(im_file, 'npy')
+        # shape = exif_size(im)  # image size
+        shape = (im.shape[1], im.shape[0])  # hw
         # im.verify()  # PIL verify
         # shape = exif_size(im)  # image size
         # shape = (shape[1], shape[0])  # hw
@@ -179,8 +179,9 @@ def verify_image_label(args):
     try:
         # Verify images
         ''' 更改读取方式'''
-        im_width, im_height, im_bands, projection, geotrans, im = read_image(im_file, 'tif')
-        shape = (im_height, im_width)  # hw
+        im = read_image(im_file, 'npy')
+        # shape = exif_size(im)  # image size
+        shape = (im.shape[1], im.shape[0])  # hw
         # im = Image.open(im_file)
         # im.verify()  # PIL verify
         # shape = exif_size(im)  # image size

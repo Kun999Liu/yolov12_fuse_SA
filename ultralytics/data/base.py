@@ -47,23 +47,24 @@ class BaseDataset(Dataset):
     """
 
     def __init__(
-        self,
-        img_path,
-        imgsz=640,
-        cache=False,
-        augment=True,
-        hyp=DEFAULT_CFG,
-        prefix="",
-        rect=False,
-        batch_size=16,
-        stride=32,
-        pad=0.5,
-        single_cls=False,
-        classes=None,
-        fraction=1.0,
+            self,
+            img_path,
+            imgsz=640,
+            cache=False,
+            augment=True,
+            hyp=DEFAULT_CFG,
+            prefix="",
+            rect=False,
+            batch_size=16,
+            stride=32,
+            pad=0.5,
+            single_cls=False,
+            classes=None,
+            fraction=1.0,
     ):
         """Initialize BaseDataset with given configuration and options."""
         super().__init__()
+        self.mode = 'npy'  # 添加参数 mode 用于读取npy格式数据
         self.img_path = img_path
         self.imgsz = imgsz
         self.augment = augment
@@ -120,7 +121,11 @@ class BaseDataset(Dataset):
                         # F += [p.parent / x.lstrip(os.sep) for x in t]  # local to global path (pathlib)
                 else:
                     raise FileNotFoundError(f"{self.prefix}{p} does not exist")
-            im_files = sorted(x.replace("/", os.sep) for x in f if x.split(".")[-1].lower() in IMG_FORMATS)
+            '''添加判断读取数据的格式 tif or  npy'''
+            if self.mode == 'npy':
+                im_files = sorted(x.replace("/", os.sep) for x in f if x.split(".")[-1].lower() == 'npy')
+            else:
+                im_files = sorted(x.replace("/", os.sep) for x in f if x.split(".")[-1].lower() in IMG_FORMATS)
             # self.img_files = sorted([x for x in f if x.suffix[1:].lower() in IMG_FORMATS])  # pathlib
             assert im_files, f"{self.prefix}No images found in {img_path}. {FORMATS_HELP_MSG}"
         except Exception as e:
@@ -155,8 +160,8 @@ class BaseDataset(Dataset):
             '''如果存在npy文件，则加载npy文件，否则读取图像文件'''
             if fn.exists():  # load npy
                 try:
-                    if f.lower().endswith(".tif"):  # load tif
-                        im_width, im_height, im_bands, projection, geotrans, im = read_image(f, mode="tif")  # 读取tif文件
+                    if self.mode == 'tif':  # load tif
+                        im = read_image(f, mode="tif")  # 读取tif文件
                     else:  # load npy
                         im = np.load(fn)
                 except Exception as e:
@@ -165,7 +170,7 @@ class BaseDataset(Dataset):
                     im = cv2.imread(f)  # BGR
             else:  # read image
                 # im = cv2.imread(f)  # BGR
-                im_width, im_height, im_bands, projection, geotrans, im = read_image(f, mode="tif")  # 读取tif文件
+                im = read_image(f, mode="tif")  # 读取tif文件
 
             if im is None:
                 raise FileNotFoundError(f"Image Not Found {f}")
@@ -251,7 +256,7 @@ class BaseDataset(Dataset):
             if im is None:
                 continue
             ratio = self.imgsz / max(im.shape[0], im.shape[1])  # max(h, w)  # ratio
-            b += im.nbytes * ratio**2
+            b += im.nbytes * ratio ** 2
         mem_required = b * self.ni / n * (1 + safety_margin)  # GB required to cache dataset into RAM
         mem = psutil.virtual_memory()
         if mem_required > mem.available:
