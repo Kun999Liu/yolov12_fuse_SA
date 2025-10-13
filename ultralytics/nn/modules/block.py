@@ -12,7 +12,6 @@ from .conv import Conv, DWConv, GhostConv, LightConv, RepConv, autopad
 from .transformer import TransformerBlock
 
 __all__ = (
-    "SA_C1",
     "SA",
     "ECASA",
     "DFL",
@@ -58,7 +57,7 @@ __all__ = (
 
 from ...utils.ndvi import NDSI_Layer
 
-class SA_C1(nn.Module):
+class C1(nn.Module):
     def __init__(self, c2):
         super().__init__()
 
@@ -247,19 +246,19 @@ class SPPF(nn.Module):
         return self.cv2(torch.cat(y, 1))
 
 
-class C1(nn.Module):
-    """CSP Bottleneck with 1 convolution."""
-
-    def __init__(self, c1, c2, n=1):
-        """Initializes the CSP Bottleneck with configurations for 1 convolution with arguments ch_in, ch_out, number."""
-        super().__init__()
-        self.cv1 = Conv(c1, c2, 1, 1)
-        self.m = nn.Sequential(*(Conv(c2, c2, 3) for _ in range(n)))
-
-    def forward(self, x):
-        """Applies cross-convolutions to input in the C3 module."""
-        y = self.cv1(x)
-        return self.m(y) + y
+# class C1(nn.Module):
+#     """CSP Bottleneck with 1 convolution."""
+#
+#     def __init__(self, c1, c2, n=1):
+#         """Initializes the CSP Bottleneck with configurations for 1 convolution with arguments ch_in, ch_out, number."""
+#         super().__init__()
+#         self.cv1 = Conv(c1, c2, 1, 1)
+#         self.m = nn.Sequential(*(Conv(c2, c2, 3) for _ in range(n)))
+#
+#     def forward(self, x):
+#         """Applies cross-convolutions to input in the C3 module."""
+#         y = self.cv1(x)
+#         return self.m(y) + y
 
 
 class C2(nn.Module):

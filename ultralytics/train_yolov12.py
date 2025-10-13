@@ -21,7 +21,7 @@ results = model.train(data=r'F:\my_code\yolov12_fuse_SA\ultralytics\cfg\datasets
                       epochs=1,
                       patience=10,
                       imgsz=416,
-                      workers=0,
+                      workers=2,
                       device="0",
                       batch=16,
                       name="TransmissionTower_7bands_M_1epoch_test",

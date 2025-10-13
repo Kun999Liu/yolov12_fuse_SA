@@ -12,7 +12,6 @@ import torch
 import torch.nn as nn
 '''导入自定义模块 SA_C1 和 SA'''
 from ultralytics.nn.modules import (
-    SA_C1,
     SA,
     AIFI,
     C1,
@@ -153,6 +152,7 @@ class BaseModel(nn.Module):
         # print("第8通道最大值:", channel_8.max().item())
         # print("第8通道最小值:", channel_8.min().item())
         # print("第8通道是否全0:", torch.all(channel_8 == 0).item())
+        '''合成的通道数默认为8，这是tensor默认的处理通道数，所以这里不需要处理，最后一个通道的值为0'''
         if x.shape[1] > 4:
             x2 = x[:, 4:7, ...]
             x = x[:, :4, ...]
@@ -325,7 +325,7 @@ class BaseModel(nn.Module):
         """
         if getattr(self, "criterion", None) is None:
             self.criterion = self.init_criterion()
-
+        '''# 传入两类图片，得到一个预测结果，batch["img"]->bs*7*416*416'''
         preds = self.forward(batch["img"]) if preds is None else preds
         return self.criterion(preds, batch)
 
@@ -369,8 +369,8 @@ class DetectionModel(BaseModel):
                 if self.end2end:
                     return self.forward(x)["one2many"]
                 return self.forward(x)[0] if isinstance(m, (Segment, Pose, OBB)) else self.forward(x)
-
-            m.stride = torch.tensor([s / x.shape[-2] for x in _forward(torch.zeros(1, ch, s, s))])  # forward
+            '''修改了代码 ch * 2'''
+            m.stride = torch.tensor([s / x.shape[-2] for x in _forward(torch.zeros(1, ch * 2, s, s))])  # forward
             self.stride = m.stride
             m.bias_init()  # only run once
         else:
@@ -1017,7 +1017,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             DWConv,
             Focus,
             BottleneckCSP,
-            C1,
+            # C1,
             C2,
             C2f,
             C3k2,
@@ -1051,7 +1051,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             args = [c1, c2, *args[1:]]
             if m in {
                 BottleneckCSP,
-                C1,
+                # C1,
                 C2,
                 C2f,
                 C3k2,
@@ -1106,7 +1106,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         elif m is CBFuse:
             c2 = ch[f[-1]]
         # '''添加自定义模块'''
-        elif m is SA_C1:
+        elif m is C1:
             c2 = ch[f]
         elif m in {SA}:
             c2 = args[0]
