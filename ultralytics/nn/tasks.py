@@ -12,6 +12,7 @@ import torch
 import torch.nn as nn
 '''导入自定义模块 SA_C1 和 SA'''
 from ultralytics.nn.modules import (
+    SA_C1,
     SA,
     AIFI,
     C1,
@@ -370,7 +371,10 @@ class DetectionModel(BaseModel):
                     return self.forward(x)["one2many"]
                 return self.forward(x)[0] if isinstance(m, (Segment, Pose, OBB)) else self.forward(x)
             '''修改了代码 ch * 2'''
-            m.stride = torch.tensor([s / x.shape[-2] for x in _forward(torch.zeros(1, ch * 2, s, s))])  # forward
+            if cfg.get('backbone').__len__() >= 20:
+                m.stride = torch.tensor([s / x.shape[-2] for x in _forward(torch.zeros(1, ch * 2, s, s))])  # forward
+            else:
+                m.stride = torch.tensor([s / x.shape[-2] for x in _forward(torch.zeros(1, ch, s, s))])  # forward
             self.stride = m.stride
             m.bias_init()  # only run once
         else:
@@ -1017,7 +1021,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             DWConv,
             Focus,
             BottleneckCSP,
-            # C1,
+            C1,
             C2,
             C2f,
             C3k2,
@@ -1051,7 +1055,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             args = [c1, c2, *args[1:]]
             if m in {
                 BottleneckCSP,
-                # C1,
+                C1,
                 C2,
                 C2f,
                 C3k2,
@@ -1106,7 +1110,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         elif m is CBFuse:
             c2 = ch[f[-1]]
         # '''添加自定义模块'''
-        elif m is C1:
+        elif m is SA_C1:
             c2 = ch[f]
         elif m in {SA}:
             c2 = args[0]

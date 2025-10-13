@@ -421,10 +421,10 @@ class LoadImagesAndVideos:
                     with Image.open(path) as img:
                         im0 = cv2.cvtColor(np.asarray(img), cv2.COLOR_RGB2BGR)  # convert image to BGR nparray
                 else:
-                    # im0 = cv2.imread(path)  # BGR
+                    im0 = cv2.imread(path)  # BGR
                     # 读取npy文件
                     # im0 = np.load(path.replace('.tif', '.npy'))
-                    im0 = read_image(path, mode="npy")  # 读取tif文件
+                    # im0 = read_image(path, mode="npy")  # 读取tif文件
                 if im0 is None:
                     LOGGER.warning(f"WARNING ⚠️ Image Read Error {path}")
                 else:

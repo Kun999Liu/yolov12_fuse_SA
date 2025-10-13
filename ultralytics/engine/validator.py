@@ -157,7 +157,7 @@ class BaseValidator:
 
             model.eval()
             '''模型预热 7个 通道'''
-            model.warmup(imgsz=(1 if pt else self.args.batch, 7, imgsz, imgsz))  # warmup
+            model.warmup(imgsz=(1 if pt else self.args.batch, (np.load(self.dataloader.dataset.im_files[0])).shape[-1], imgsz, imgsz))  # warmup
 
         self.run_callbacks("on_val_start")
         dt = (
