@@ -150,7 +150,13 @@ def verify_image(args):
     nf, nc, msg = 0, 0, ""
     try:
         # im = Image.open(im_file)
-        im = read_image(im_file, 'npy')
+        ''' 更改读取方式'''
+        if im_file.lower().endswith(".npy"):
+            im = read_image(im_file, 'npy')
+        elif im_file.lower().endswith("tif"):
+            im = read_image(im_file, 'tif')
+        else:
+            im = Image.open(im_file)
         # shape = exif_size(im)  # image size
         shape = (im.shape[1], im.shape[0])  # hw
         # im.verify()  # PIL verify
@@ -179,7 +185,12 @@ def verify_image_label(args):
     try:
         # Verify images
         ''' 更改读取方式'''
-        im = read_image(im_file, 'npy')
+        if im_file.lower().endswith(".npy"):
+            im = read_image(im_file, 'npy')
+        elif im_file.lower().endswith("tif"):
+            im = read_image(im_file, 'tif')
+        else:
+            im = Image.open(im_file)
         # shape = exif_size(im)  # image size
         shape = (im.shape[1], im.shape[0])  # hw
         # im = Image.open(im_file)

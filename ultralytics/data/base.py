@@ -17,7 +17,6 @@ from torch.utils.data import Dataset
 from ultralytics.data.utils import FORMATS_HELP_MSG, HELP_URL, IMG_FORMATS, read_image
 from ultralytics.utils import DEFAULT_CFG, LOCAL_RANK, LOGGER, NUM_THREADS, TQDM
 
-
 class BaseDataset(Dataset):
     """
     Base dataset class for loading and processing image data.
@@ -64,7 +63,7 @@ class BaseDataset(Dataset):
     ):
         """Initialize BaseDataset with given configuration and options."""
         super().__init__()
-        self.mode = 'npy'  # 添加参数 mode 用于读取npy格式数据
+        self.mode = "npy" # 添加参数 mode 用于读取npy格式数据
         self.img_path = img_path
         self.imgsz = imgsz
         self.augment = augment
