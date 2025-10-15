@@ -154,46 +154,48 @@ class BaseModel(nn.Module):
         # print("第8通道最小值:", channel_8.min().item())
         # print("第8通道是否全0:", torch.all(channel_8 == 0).item())
         '''合成的通道数默认为8，这是tensor默认的处理通道数，所以这里不需要处理，最后一个通道的值为0'''
-        if x.shape[1] > 4:
+        y, dt, embeddings = [], [], []  # outputs
+        if x.shape[1] >= 7:
             x2 = x[:, 4:7, ...]
             x = x[:, :4, ...]
-            y, dt, embeddings = [], [], []  # outputs
-            for m in self.model:
-                # 当第10层的时候输入images2
-                if m.i == 12:
-                    x = m(x2)
-                else:
-                    if m.f != -1:  # if not from previous layer
-                        x = y[m.f] if isinstance(m.f, int) else [x if j == -1 else y[j] for j in
-                                                                 m.f]  # from earlier layers
-                    if profile:
-                        self._profile_one_layer(m, x, dt)
-                    x = m(x)  # run
-                y.append(x if m.i in self.save else None)  # save output
-                if visualize:
-                    feature_visualization(x, m.type, m.i, save_dir=visualize)
-                if embed and m.i in embed:
-                    embeddings.append(nn.functional.adaptive_avg_pool2d(x, (1, 1)).squeeze(-1).squeeze(-1))  # flatten
-                    if m.i == max(embed):
-                        return torch.unbind(torch.cat(embeddings, 1), dim=0)
-
-        # 当只有高分2号影像或者只有sar影像时
-        elif x.shape[1] > 1 and x.shape[1] <= 4:
-            y, dt, embeddings = [], [], []  # outputs
-            for m in self.model:
+        else:
+            x2 = None
+        for m in self.model:
+            # 当第10层的时候输入images2
+            if x2 is not None and m.i == 10:
+                x = m(x2)
+            else:
                 if m.f != -1:  # if not from previous layer
                     x = y[m.f] if isinstance(m.f, int) else [x if j == -1 else y[j] for j in
                                                              m.f]  # from earlier layers
                 if profile:
                     self._profile_one_layer(m, x, dt)
                 x = m(x)  # run
-                y.append(x if m.i in self.save else None)  # save output
-                if visualize:
-                    feature_visualization(x, m.type, m.i, save_dir=visualize)
-                if embed and m.i in embed:
-                    embeddings.append(nn.functional.adaptive_avg_pool2d(x, (1, 1)).squeeze(-1).squeeze(-1))  # flatten
-                    if m.i == max(embed):
-                        return torch.unbind(torch.cat(embeddings, 1), dim=0)
+            y.append(x if m.i in self.save else None)  # save output
+            if visualize:
+                feature_visualization(x, m.type, m.i, save_dir=visualize)
+            if embed and m.i in embed:
+                embeddings.append(nn.functional.adaptive_avg_pool2d(x, (1, 1)).squeeze(-1).squeeze(-1))  # flatten
+                if m.i == max(embed):
+                    return torch.unbind(torch.cat(embeddings, 1), dim=0)
+
+        # # 当只有高分2号影像或者只有sar影像时
+        # elif x.shape[1] > 1 and x.shape[1] <= 4:
+        #     y, dt, embeddings = [], [], []  # outputs
+        #     for m in self.model:
+        #         if m.f != -1:  # if not from previous layer
+        #             x = y[m.f] if isinstance(m.f, int) else [x if j == -1 else y[j] for j in
+        #                                                      m.f]  # from earlier layers
+        #         if profile:
+        #             self._profile_one_layer(m, x, dt)
+        #         x = m(x)  # run
+        #         y.append(x if m.i in self.save else None)  # save output
+        #         if visualize:
+        #             feature_visualization(x, m.type, m.i, save_dir=visualize)
+        #         if embed and m.i in embed:
+        #             embeddings.append(nn.functional.adaptive_avg_pool2d(x, (1, 1)).squeeze(-1).squeeze(-1))  # flatten
+        #             if m.i == max(embed):
+        #                 return torch.unbind(torch.cat(embeddings, 1), dim=0)
         return x
 
     def _predict_augment(self, x):
@@ -1119,7 +1121,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         '''当输入的数据为GF、SAR的融合图象时，yaml文件所调用的数据'''
         # 在第10层输入为images2，通道数为3
         if d.get('backbone').__len__() > 20:
-            if i == 12:
+            if i == 10:
                 args[0] = 3
         m_ = nn.Sequential(*(m(*args) for _ in range(n))) if n > 1 else m(*args)  # module
         t = str(m)[8:-2].replace("__main__.", "")  # module type
