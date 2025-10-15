@@ -63,7 +63,7 @@ class BaseDataset(Dataset):
     ):
         """Initialize BaseDataset with given configuration and options."""
         super().__init__()
-        self.mode = "tif" # 添加参数 mode 用于读取npy格式数据
+        self.mode = "npy" # 添加参数 mode 用于读取npy格式数据
         self.img_path = img_path
         self.imgsz = imgsz
         self.augment = augment
