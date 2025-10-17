@@ -1,7 +1,7 @@
 #path: F:/my_code/datasets # dataset root dir
 #path: F:/my_code/testdatasets # dataset root dir
-path: D:/Git/yolov12_fuse_SA/ultralytics/testdatasets
-#path: D:/yolodatasets/datasets_2m
+#path: D:/Git/yolov12_fuse_SA/ultralytics/testdatasets
+path: D:/yolodatasets/datasets
 #path: D:/windfram&tower/datasets
 #path: D:/yolodatasets/datasets
 train: train/images # train images (relative to 'path') 128 images
