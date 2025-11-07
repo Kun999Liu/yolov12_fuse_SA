@@ -344,7 +344,7 @@ class LoadImagesAndVideos:
         images, videos = [], []
         for f in files:
             suffix = f.split(".")[-1].lower()  # Get file extension without the dot and lowercase
-            if suffix in IMG_FORMATS:
+            if suffix in IMG_FORMATS or suffix == "npy":
                 images.append(f)
             elif suffix in VID_FORMATS:
                 videos.append(f)
@@ -420,10 +420,13 @@ class LoadImagesAndVideos:
                     register_heif_opener()  # Register HEIF opener with Pillow
                     with Image.open(path) as img:
                         im0 = cv2.cvtColor(np.asarray(img), cv2.COLOR_RGB2BGR)  # convert image to BGR nparray
+                elif path.split(".")[-1].lower() == "npy":
+                    # ✅ 处理NPY文件
+                    im0 = np.load(path)
                 else:
-                    # im0 = cv2.imread(path)  # BGR
+                    im0 = cv2.imread(path)  # BGR
                     # 读取npy文件
-                    im0 = np.load(path.replace('.tif', '.npy'))
+                    # im0 = np.load(path.replace('.tif', '.npy'))
                     # im0 = read_image(path, mode="npy")  # 读取tif文件
                 if im0 is None:
                     LOGGER.warning(f"WARNING ⚠️ Image Read Error {path}")

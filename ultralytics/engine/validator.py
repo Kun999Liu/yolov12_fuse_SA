@@ -156,9 +156,9 @@ class BaseValidator:
             self.dataloader = self.dataloader or self.get_dataloader(self.data.get(self.args.split), self.args.batch)
 
             model.eval()
-            '''模型预热 7个 通道'''
+            '''模型预热 6个 通道'''
             if self.dataloader.dataset.im_files[0].endswith('.npy'):
-                if (np.load(self.dataloader.dataset.im_files[0])).shape[-1] >= 7:
+                if (np.load(self.dataloader.dataset.im_files[0])).shape[-1] >= 6:
                     model.warmup(imgsz=(1 if pt else self.args.batch, (np.load(self.dataloader.dataset.im_files[0])).shape[-1], imgsz, imgsz))  # warmup
             elif self.dataloader.dataset.im_files[0].endswith('.tif'):
                 model.warmup(imgsz=(1 if pt else self.args.batch, 3, imgsz, imgsz))  # warmup

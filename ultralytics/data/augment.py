@@ -1376,9 +1376,9 @@ class RandomHSV:
             lut_val = np.clip(x * r[2], 0, 255).astype(dtype)
 
             '''图像增强'''
-            if img.shape[-1] >= 7:
-                img1 = img[..., :4]
-                img2 = img[..., 4:]
+            if img.shape[-1] >= 6:
+                img1 = img[..., :3]
+                img2 = img[..., 3:]
 
                 hue1, sat1, val1 = cv2.split(cv2.cvtColor(img1, cv2.COLOR_BGR2HSV))
                 hue2, sat2, val2 = cv2.split(cv2.cvtColor(img2, cv2.COLOR_BGR2HSV))
@@ -1611,9 +1611,9 @@ class LetterBox:
         top, bottom = int(round(dh - 0.1)) if self.center else 0, int(round(dh + 0.1))
         left, right = int(round(dw - 0.1)) if self.center else 0, int(round(dw + 0.1))
         '''图像增强'''
-        if img.shape[-1] >= 7:
-            img1 = img[..., :4]
-            img2 = img[..., 4:]
+        if img.shape[-1] >= 6:
+            img1 = img[..., :3]
+            img2 = img[..., 3:]
             img1 = cv2.copyMakeBorder(
                 img1, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(114, 114, 114)
             )  # add border

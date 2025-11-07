@@ -1,0 +1,1 @@
+pyinstaller -F FusionNN.py --collect-all ultralytics --add-data "weights;weights" --add-data "config.xml;." --name FusionNN

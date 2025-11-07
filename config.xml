@@ -1,0 +1,5 @@
+<config>
+    <device>0</device>
+    <input_folder>./testimages</input_folder>
+    <output_folder>./runs/detect/pre</output_folder>
+</config>
