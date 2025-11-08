@@ -11,10 +11,11 @@ Describe:
 import os
 import sys
 import xml.etree.ElementTree as ET
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # 让当前目录优先
 from ultralytics import YOLO
+
 # 避免 MKL 报错
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 
 # === 通用路径解决方案 ===
 def get_base_dir():
@@ -24,7 +25,10 @@ def get_base_dir():
     else:  # 普通python脚本
         return os.path.dirname(os.path.abspath(__file__))
 
+
 BASE_DIR = get_base_dir()
+
+
 # =====================
 
 
@@ -81,7 +85,7 @@ def run_detection():
     model = YOLO(model_path)
 
     print("模型加载完成，开始预测...")
-    model.predict(
+    results = model.predict(
         source=input_folder,
         imgsz=416,
         cache='disk',
@@ -93,10 +97,25 @@ def run_detection():
         name=output_folder
     )
 
+    # 统计信息
+    total_objects = 0
+    total_time_ms = 0.0
+
+    for i, r in enumerate(results, start=1):
+        objs = len(r.boxes)
+        t = r.speed['preprocess'] + r.speed['inference'] + r.speed['postprocess']
+        total_objects += objs
+        total_time_ms += t
+
+    # 汇总结果
+    print("\n========== 预测统计结果 ==========")
+    print(f"总预测时间（模型报告）: {total_time_ms / 1000:.3f} 秒")
+    print(f"平均每张图用时: {(total_time_ms / len(results)):.2f} ms")
+    print(f"检测到的目标总数: {total_objects} 个 WindTurbine")
+    print("==================================")
     print(f"预测完成！结果已保存至: {output_folder}")
     input("按回车键退出程序...")
 
 
 if __name__ == '__main__':
     run_detection()
-

@@ -1,9 +1,9 @@
 from ultralytics import YOLO
 
-model = YOLO(r"D:\Git\yolov12_fuse_SA\ultralytics\runs\detect\WindTurbine_6bands_M_500epoch_yolov10_fuse_npy\weights\best.pt")
+model = YOLO(r"F:\my_code\yolov12_fuse_SA\package\weights\best.pt")
 
 
-results = model.predict(source=r"D:\Git\yolov10_fuse\ultralytics\testimages",
+results = model.predict(source=r"F:\my_code\yolov10_fuse-SA\ultralytics\testimages",
                         imgsz=416,
                         cache='disk',
                         workers=8,
@@ -16,6 +16,21 @@ results = model.predict(source=r"D:\Git\yolov10_fuse\ultralytics\testimages",
                         )
 
 
+# 统计信息
+total_objects = 0
+total_time_ms = 0.0
 
+for i, r in enumerate(results, start=1):
+    objs = len(r.boxes)
+    t = r.speed['preprocess'] + r.speed['inference'] + r.speed['postprocess']
+    total_objects += objs
+    total_time_ms += t
+
+# 汇总结果
+print("\n========== 预测统计结果 ==========")
+print(f"总预测时间（模型报告）: {total_time_ms/1000:.3f} 秒")
+print(f"平均每张图用时: {(total_time_ms/len(results)):.2f} ms")
+print(f"检测到的目标总数: {total_objects} 个 WindTurbine")
+print("==================================")
 
 
