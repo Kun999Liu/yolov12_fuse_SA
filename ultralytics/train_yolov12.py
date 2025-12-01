@@ -14,18 +14,18 @@ warnings.filterwarnings("ignore", category=UserWarning, module="albumentations.c
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 #  Load a COCO-pretrained YOLO12n model
-model = YOLO(r"./yolov10m_fuse.yaml")
+model = YOLO(r"./yolov12_fuse.yaml")
 # data=r"F:\my_code\yolov12_fuse_SA\ultralytics\cfg\datasets\TransmissionTower.yaml",
 #D:\Git\yolov12_fuse_SA\ultralytics\cfg\models\v10\yolov10m_fuse_ndsi.yaml
 # Train the model on the COCO8 example dataset for 100 epochs
-results = model.train(data=r'./WindTurbine.yaml',
-                      epochs=500,
-                      patience=100,
+results = model.train(data=r'./TransmissionTower.yaml',
+                      epochs=50,
+                      patience=10,
                       imgsz=416,
-                      workers=8,
-                      device="0",
+                      workers=0,
+                      device="cpu",
                       batch=16,
-                      name="WindTurbine_6bands_M_500epoch_yolov10_fuse_npy",
+                      name="TransmissionTower_7bands_M_1epoch_yolov12_fuse_npy_test",
                       amp=False,
                       # pretrained=False,  # 不加载官方权重
                       )
