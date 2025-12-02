@@ -533,10 +533,10 @@ class YOLODetectionGUI(QMainWindow):
                 # 默认配置
                 self.model_path_edit.setText(os.path.join(BASE_DIR, "weights", "best.pt"))
                 self.input_path_edit.setText(os.path.join(BASE_DIR, "testimages"))
-                self.output_path_edit.setText(os.path.join(BASE_DIR, "runs/detect/pre"))
-                self.log("⚠ 未找到配置文件，使用默认配置")
+                self.output_path_edit.setText(os.path.join(BASE_DIR, "runs"))
+                self.log("未找到配置文件，使用默认配置")
         except Exception as e:
-            self.log(f"✗ 配置加载失败: {e}")
+            self.log(f"配置加载失败: {e}")
 
     def save_config(self):
         """保存配置到 XML 文件"""
@@ -555,10 +555,10 @@ class YOLODetectionGUI(QMainWindow):
             xml_path = os.path.join(BASE_DIR, "config.xml")
             tree.write(xml_path, encoding="utf-8", xml_declaration=True)
 
-            self.log("✓ 配置已保存到 config.xml")
+            self.log("配置已保存到 config.xml")
             QMessageBox.information(self, "成功", "配置保存成功！")
         except Exception as e:
-            self.log(f"✗ 配置保存失败: {e}")
+            self.log(f"配置保存失败: {e}")
             QMessageBox.warning(self, "错误", f"配置保存失败：{e}")
 
     def browse_model(self):
