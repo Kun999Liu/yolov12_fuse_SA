@@ -1,5 +1,2 @@
-<config>
-    <device>0</device>
-    <input_folder>./testimages</input_folder>
-    <output_folder>./runs/detect/pre</output_folder>
-</config>
+<?xml version='1.0' encoding='utf-8'?>
+<config><device>0</device><input_folder>testimages</input_folder><output_folder>runs</output_folder></config>

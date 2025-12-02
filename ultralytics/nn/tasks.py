@@ -165,7 +165,7 @@ class BaseModel(nn.Module):
             x2 = None
         for m in self.model:
             # 当第10层的时候输入images2
-            if x2 is not None and m.i == 10:
+            if x2 is not None and m.i == 11:
                 x = m(x2)
             else:
                 if m.f != -1:  # if not from previous layer
@@ -1124,7 +1124,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         '''当输入的数据为GF、SAR的融合图象时，yaml文件所调用的数据'''
         # 在第10层输入为images2，通道数为3
         if d.get('backbone').__len__() > 20:
-            if i == 10:
+            if i == 11:
                 args[0] = 3
         m_ = nn.Sequential(*(m(*args) for _ in range(n))) if n > 1 else m(*args)  # module
         t = str(m)[8:-2].replace("__main__.", "")  # module type
