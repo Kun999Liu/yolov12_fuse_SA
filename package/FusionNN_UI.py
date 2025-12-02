@@ -144,7 +144,7 @@ class YOLODetectionGUI(QMainWindow):
         self.apply_styles()
 
     def init_ui(self):
-        self.setWindowTitle("YOLO 目标检测系统")
+        self.setWindowTitle("风机目标检测系统")
         self.setGeometry(100, 100, 1200, 700)
 
         # ==================== 新增图标代码开始 ====================
@@ -181,7 +181,7 @@ class YOLODetectionGUI(QMainWindow):
         left_layout.setSpacing(15)
 
         # 标题
-        title = QLabel("🔍 YOLO 目标检测系统")
+        title = QLabel("风机目标检测系统")
         title.setAlignment(Qt.AlignCenter)
         title.setObjectName("titleLabel")
         left_layout.addWidget(title)
@@ -238,16 +238,16 @@ class YOLODetectionGUI(QMainWindow):
         control_layout = QHBoxLayout()
         control_layout.setSpacing(15)
 
-        self.start_btn = QPushButton("🚀 开始检测")
+        self.start_btn = QPushButton("开始检测")
         self.start_btn.setObjectName("startButton")
         self.start_btn.clicked.connect(self.start_detection)
         control_layout.addWidget(self.start_btn)
 
-        self.save_config_btn = QPushButton("💾 保存配置")
+        self.save_config_btn = QPushButton("保存配置")
         self.save_config_btn.clicked.connect(self.save_config)
         control_layout.addWidget(self.save_config_btn)
 
-        self.open_output_btn = QPushButton("📁 打开输出文件夹")
+        self.open_output_btn = QPushButton("打开输出文件夹")
         self.open_output_btn.clicked.connect(self.open_output_folder)
         control_layout.addWidget(self.open_output_btn)
 
