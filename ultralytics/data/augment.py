@@ -1376,7 +1376,7 @@ class RandomHSV:
             lut_val = np.clip(x * r[2], 0, 255).astype(dtype)
 
             '''图像增强'''
-            if img.shape[-1] >= 6:
+            if img.shape[-1] == 6:
                 img1 = img[..., :3]
                 img2 = img[..., 3:]
 
@@ -1390,7 +1390,20 @@ class RandomHSV:
                 cv2.cvtColor(im2_hsv, cv2.COLOR_HSV2BGR)  # no return needed
 
                 np.concatenate((img1, img2), axis=-1)
+            elif img.shape[-1] >= 7:
+                img1 = img[..., :4]
+                img2 = img[..., 4:]
 
+                hue1, sat1, val1 = cv2.split(cv2.cvtColor(img1, cv2.COLOR_BGR2HSV))
+                hue2, sat2, val2 = cv2.split(cv2.cvtColor(img2, cv2.COLOR_BGR2HSV))
+
+                im1_hsv = cv2.merge((cv2.LUT(hue1, lut_hue), cv2.LUT(sat1, lut_sat), cv2.LUT(val1, lut_val)))
+                cv2.cvtColor(im1_hsv, cv2.COLOR_HSV2BGR)  # no return needed
+
+                im2_hsv = cv2.merge((cv2.LUT(hue2, lut_hue), cv2.LUT(sat2, lut_sat), cv2.LUT(val2, lut_val)))
+                cv2.cvtColor(im2_hsv, cv2.COLOR_HSV2BGR)  # no return needed
+
+                np.concatenate((img1, img2), axis=-1)
             else:
                 hue, sat, val = cv2.split(cv2.cvtColor(img, cv2.COLOR_BGR2HSV))
 
@@ -1611,9 +1624,19 @@ class LetterBox:
         top, bottom = int(round(dh - 0.1)) if self.center else 0, int(round(dh + 0.1))
         left, right = int(round(dw - 0.1)) if self.center else 0, int(round(dw + 0.1))
         '''图像增强'''
-        if img.shape[-1] >= 6:
+        if img.shape[-1] == 6:
             img1 = img[..., :3]
             img2 = img[..., 3:]
+            img1 = cv2.copyMakeBorder(
+                img1, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(114, 114, 114)
+            )  # add border
+            img2 = cv2.copyMakeBorder(
+                img2, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(114, 114, 114)
+            )  # add border
+            img = np.concatenate((img1, img2), axis=-1)
+        elif img.shape[-1] >= 7:
+            img1 = img[..., :4]
+            img2 = img[..., 4:]
             img1 = cv2.copyMakeBorder(
                 img1, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(114, 114, 114)
             )  # add border
