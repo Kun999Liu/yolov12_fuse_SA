@@ -157,12 +157,9 @@ class BaseDataset(Dataset):
         im, f, fn = self.ims[i], self.im_files[i], self.npy_files[i]
         if im is None:  # not cached in RAM
             '''如果存在npy文件，则加载npy文件，否则读取图像文件'''
-            if fn.exists():  # load npy
+            if fn.exists() and self.mode == 'npy':  # load npy
                 try:
-                    if self.mode == 'tif':  # load tif
-                        im = read_image(f, mode="tif")  # 读取tif文件
-                    else:  # load npy
-                        im = np.load(fn)
+                    im = np.load(fn)
                 except Exception as e:
                     LOGGER.warning(f"{self.prefix}WARNING ⚠️ Removing corrupt *.npy image file {fn} due to: {e}")
                     Path(fn).unlink(missing_ok=True)
