@@ -214,5 +214,7 @@ if __name__ == "__main__":
     # os.makedirs(out_folder, exist_ok=True)
     # crop_by_small_tif(big_tif, small_folder, out_folder)
     # copy_common_images(r"D:\数据\datasets\labels", r"D:\数据\datasets\images_sar", r"D:\数据\datasets\images_common_labels")
-    remove_empty_files(r"D:\OneDrive_files\OneDrive\GF2\labels")
+    # remove_empty_files(r"D:\OneDrive_files\OneDrive\GF2\labels")
+    # filter_by_nodata(r"D:\data\images_common_tif", nodata_threshold=0.5)
+    copy_common_images(r"D:\data\images_common_sar", r"D:\yolodatasets\transmissiontower_7bands\images\test\images", r"D:\yolodatasets\transmissiontower_7bands\images2\test\images")
 
