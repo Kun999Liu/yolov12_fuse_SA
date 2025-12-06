@@ -67,6 +67,7 @@ from ultralytics.nn.modules import (
     WorldDetect,
     v10Detect,
     A2C2f,
+    FFCM,
 )
 from ultralytics.utils import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, emojis, yaml_load
 from ultralytics.utils.checks import check_requirements, check_suffix, check_yaml
@@ -165,7 +166,7 @@ class BaseModel(nn.Module):
             x2 = None
         for m in self.model:
             # 当第10层的时候输入images2
-            if x2 is not None and m.i == 11:
+            if x2 is not None and m.i == 10:
                 x = m(x2)
             else:
                 if m.f != -1:  # if not from previous layer
@@ -1047,6 +1048,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             SCDown,
             C2fCIB,
             A2C2f,
+            FFCM,
         }:
             c1, c2 = ch[f], args[0]
             if c2 != nc:  # if c2 not equal to number of classes (i.e. for Classify() output)
@@ -1074,6 +1076,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                 C2fCIB,
                 C2PSA,
                 A2C2f,
+                FFCM,
             }:
                 args.insert(2, n)  # number of repeats
                 n = 1
@@ -1124,7 +1127,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         '''当输入的数据为GF、SAR的融合图象时，yaml文件所调用的数据'''
         # 在第10层输入为images2，通道数为3
         if d.get('backbone').__len__() > 20:
-            if i == 11:
+            if i == 10:
                 args[0] = 3
         m_ = nn.Sequential(*(m(*args) for _ in range(n))) if n > 1 else m(*args)  # module
         t = str(m)[8:-2].replace("__main__.", "")  # module type
