@@ -18,6 +18,7 @@ Example:
 """
 
 from .block import (
+    FFCM,
     SA_C1,
     SA,
     ECASA,

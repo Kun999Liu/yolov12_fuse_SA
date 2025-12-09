@@ -12,6 +12,7 @@ from .conv import Conv, DWConv, GhostConv, LightConv, RepConv, autopad
 from .transformer import TransformerBlock
 
 __all__ = (
+    "FFCM",
     "SA_C1",
     "SA",
     "ECASA",
@@ -55,6 +56,9 @@ __all__ = (
     "SCDown",
     "TorchVision",
 )
+
+from ..FADformer import Fused_Fourier_Conv_Mixer
+
 
 class NDSI_Layer(nn.Module):
     def __init__(self, dimension=1):
@@ -1460,3 +1464,8 @@ class A2C2f(nn.Module):
         if self.gamma is not None:
             return x + self.gamma.view(1, -1, 1, 1) * self.cv2(torch.cat(y, 1))
         return self.cv2(torch.cat(y, 1))
+
+class FFCM(C2f):
+    def __init__(self, c1, c2, n=1, shortcut=False, g=1, e=0.5):
+        super().__init__(c1, c2, n, shortcut, g, e)
+        self.m = nn.ModuleList(Fused_Fourier_Conv_Mixer(self.c) for _ in range(n))
