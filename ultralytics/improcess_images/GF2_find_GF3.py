@@ -216,5 +216,5 @@ if __name__ == "__main__":
     # copy_common_images(r"D:\数据\datasets\labels", r"D:\数据\datasets\images_sar", r"D:\数据\datasets\images_common_labels")
     # remove_empty_files(r"D:\OneDrive_files\OneDrive\GF2\labels")
     # filter_by_nodata(r"D:\data\images_common_tif", nodata_threshold=0.5)
-    copy_common_images(r"D:\data\images_common_sar", r"D:\yolodatasets\transmissiontower_7bands\images\test\images", r"D:\yolodatasets\transmissiontower_7bands\images2\test\images")
+    copy_common_images(r"F:\my_code\transmissiontower_7bands\images2\test\images", r"F:\my_code\TransMission\images\test\images", r"F:\my_code\TransMission\images2\test\images")
 

@@ -126,8 +126,8 @@ def convert_4band_to_3band_geotiff(input_folder, output_folder, bands_to_keep=[1
 # 使用示例
 if __name__ == "__main__":
     # 设置输入和输出文件夹路径
-    input_folder = r"D:\windfram&tower\transmission_7bands\images_2\train\images"  # 输入文件夹
-    output_folder = r"D:\windfram&tower\transmission_7bands\images_2\train\images_rgb"  # 输出文件夹
+    input_folder = r"C:\Users\liuku\Desktop\images"  # 输入文件夹
+    output_folder = r"C:\Users\liuku\Desktop\images_rgb"  # 输出文件夹
 
     # GF2卫星波段说明:
     # 波段1: Blue (蓝色, 450-520nm)

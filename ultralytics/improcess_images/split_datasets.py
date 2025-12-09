@@ -13,14 +13,14 @@ import shutil
 import random
 
 # 设置路径
-images_dir = r"C:\Users\liuku\Desktop\GF2\images"
-labels_dir = r"C:\Users\liuku\Desktop\GF2\labels"
+images_dir = r"F:\my_code\TransMission\images"
+labels_dir = r"F:\my_code\TransMission\labels"
 
-output_dir = r"C:\Users\liuku\Desktop\GF2\datasets"  # 输出总文件夹
+output_dir = r"F:\my_code\TransMission\datasets" # 输出总文件夹
 
 # 设置划分比例
-train_ratio = 0.7
-val_ratio = 0.2
+train_ratio = 0.8
+val_ratio = 0.1
 test_ratio = 0.1
 
 # 创建输出文件夹结构

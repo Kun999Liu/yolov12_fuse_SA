@@ -2,9 +2,9 @@
 import os
 import shutil
 
-file1_folder = r'G:\wanxingyu\project\yolov10\yolov10-fuse\runs\detect\val-config-default\errorfile\FP'
-file2_folder = r'G:\wanxingyu\project\yolov10\yolov10-fuse\runs\detect\predict2'
-file3_folder = r'C:\Users\dell\Desktop\temp\temp1'
+file1_folder = r"C:\Users\liuku\Desktop\errorfile2\FP"
+file2_folder = r"F:\my_code\transmissiontower_7bands\images\val\images_rgb"
+file3_folder = r"C:\Users\liuku\Desktop\errorfile2\FP_images"
 
 if not os.path.exists(file3_folder):
     os.makedirs(file3_folder)
@@ -14,7 +14,7 @@ for file_name in os.listdir(file1_folder):
     file1_path = os.path.join(file1_folder, file_name)
 
     if os.path.isfile(file1_path):
-        file_name = file_name.replace('.txt', '.tif')
+        file_name = file_name.replace('.txt', '.png')
         file2_path = os.path.join(file2_folder, file_name)
 
         if os.path.isfile(file2_path):

@@ -1,10 +1,10 @@
-import ultralytics
-print(ultralytics.__version__)
-print(ultralytics.__file__)
-
-from ultralytics.data.utils import read_image
-img = read_image(r"F:\wxy_code\mydata_7bands\images\train\GF2_PMS1_E82.7_N45.2_20220430_L1A0006441524-pansharpen2colNum_12rowNum_39.npy", "npy")
-print(img.shape[0], img.shape[1], img.shape[2])
+# import ultralytics
+# print(ultralytics.__version__)
+# print(ultralytics.__file__)
+#
+# from ultralytics.data.utils import read_image
+# img = read_image(r"F:\wxy_code\mydata_7bands\images\train\GF2_PMS1_E82.7_N45.2_20220430_L1A0006441524-pansharpen2colNum_12rowNum_39.npy", "npy")
+# print(img.shape[0], img.shape[1], img.shape[2])
 
 import os
 import glob
@@ -14,14 +14,14 @@ import xml.etree.ElementTree as ET
 
 # ================= 用户配置区 =================
 # 1. 这里放你那个“数值偏低”的 dB 影像文件夹
-INPUT_DB_FOLDER = r"C:\Data\Your_Wrong_dB_Files"
+INPUT_DB_FOLDER = r"C:\Users\liuku\Desktop\images"
 
 # 2. 这里放原始数据的 XML 文件夹 (用于读取参数)
 # 脚本会根据文件名尝试自动匹配
-XML_FOLDER = r"C:\Data\GF3_Original_XML"
+XML_FOLDER = r"E:\xml"
 
 # 3. 结果保存位置
-OUTPUT_FOLDER = r"C:\Data\GF3_Corrected_Final"
+OUTPUT_FOLDER = r"C:\Users\liuku\Desktop\images-new"
 
 
 # ===========================================
