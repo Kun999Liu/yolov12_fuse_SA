@@ -2,27 +2,26 @@ import os
 import numpy as np
 from osgeo import gdal
 from pathlib import Path
-from PIL import Image
+from PIL import Image, ImageEnhance, ImageFilter  # 新增 ImageEnhance 和 ImageFilter
 
 
-def convert_4band_to_3band_geotiff(input_folder, output_folder, bands_to_keep=[1, 2, 3], stretch_method='percentile'):
+def convert_4band_to_3band_enhanced(input_folder, output_folder, bands_to_keep=[3, 2, 1],
+                                    lower_percent=0.5, upper_percent=99.5,
+                                    gamma=1.2, saturation=1.3, sharpen=True):
     """
-    将4波段遥感影像转换为3波段PNG图像
+    将4波段遥感影像转换为3波段PNG图像，并进行清晰度增强。
 
     参数:
-        input_folder: 输入文件夹路径
-        output_folder: 输出文件夹路径
-        bands_to_keep: 要保留的波段索引列表（从1开始），默认保留前3个波段
-                      对于GF2: [1,2,3] = Blue, Green, Red
-        stretch_method: 拉伸方法
-                       'percentile': 2%-98%分位数拉伸（推荐，适合遥感影像）
-                       'minmax': 最小最大值拉伸
+        input_folder: 输入文件夹
+        output_folder: 输出文件夹
+        bands_to_keep: 波段顺序 [Red, Green, Blue]。GF2通常是 [3, 2, 1]
+        lower_percent/upper_percent: 动态范围拉伸的百分比 (默认0.5%-99.5%，比2-98保留更多细节)
+        gamma: Gamma校正值 (值 < 1 变亮, > 1 变暗/增加对比度。通常 0.8-1.2 之间调整)
+        saturation: 饱和度倍数 (1.0为原图，>1.0 增加色彩鲜艳度)
+        sharpen: 是否应用锐化滤镜
     """
 
-    # 创建输出文件夹
     os.makedirs(output_folder, exist_ok=True)
-
-    # 获取所有TIFF文件
     input_path = Path(input_folder)
     tif_files = list(input_path.glob('*.tif')) + list(input_path.glob('*.tiff'))
 
@@ -30,86 +29,82 @@ def convert_4band_to_3band_geotiff(input_folder, output_folder, bands_to_keep=[1
         print(f"在 {input_folder} 中未找到TIFF文件")
         return
 
-    print(f"找到 {len(tif_files)} 个TIFF文件")
+    print(f"找到 {len(tif_files)} 个TIFF文件，开始增强处理...")
 
-    # 处理每个影像
     for tif_file in tif_files:
         try:
             print(f"\n处理: {tif_file.name}")
-
-            # 打开影像
             dataset = gdal.Open(str(tif_file))
-            if dataset is None:
-                print(f"  无法打开文件")
-                continue
+            if dataset is None: continue
 
-            # 获取波段数
-            band_count = dataset.RasterCount
-            print(f"  波段数: {band_count}")
-
-            if band_count != 4:
-                print(f"  跳过: 不是4波段影像")
-                dataset = None
-                continue
-
-            # 获取影像信息
-            width = dataset.RasterXSize
-            height = dataset.RasterYSize
-            projection = dataset.GetProjection()
-            geotransform = dataset.GetGeoTransform()
-
-            print(f"  尺寸: {width} x {height}")
-
-            # 读取要保留的波段
+            # 读取RGB波段数据
             bands_data = []
             for band_idx in bands_to_keep:
                 band = dataset.GetRasterBand(band_idx)
-                band_array = band.ReadAsArray()
-                bands_data.append(band_array)
-                print(
-                    f"  读取波段 {band_idx}: 数据类型={band_array.dtype}, 范围=[{band_array.min()}, {band_array.max()}]")
+                if band is None:
+                    raise ValueError(f"无法获取波段 {band_idx}")
+                bands_data.append(band.ReadAsArray())
 
-            # 堆叠波段
-            output_array = np.stack(bands_data, axis=0)
+            height, width = bands_data[0].shape
 
-            # 创建输出文件（PNG格式）
-            output_filename = tif_file.stem + '.png'
-            output_path = Path(output_folder) / output_filename
-
-            # 数据归一化到0-255
-            # 对每个波段分别归一化
+            # --- 步骤1: 改进的百分比拉伸 ---
             output_8bit = np.zeros((3, height, width), dtype=np.uint8)
-            for i in range(3):
-                band_data = output_array[i].astype(np.float32)
 
-                if stretch_method == 'percentile':
-                    # 计算2%和98%分位数用于拉伸（避免异常值影响）
-                    p2, p98 = np.percentile(band_data, (2, 98))
-                    if p98 > p2:
-                        band_stretched = np.clip((band_data - p2) / (p98 - p2) * 255, 0, 255)
-                    else:
-                        band_stretched = band_data
-                    print(f"  波段 {bands_to_keep[i]} 拉伸: [{p2:.1f}, {p98:.1f}] → [0, 255]")
-                else:  # minmax
-                    vmin, vmax = band_data.min(), band_data.max()
-                    if vmax > vmin:
-                        band_stretched = np.clip((band_data - vmin) / (vmax - vmin) * 255, 0, 255)
-                    else:
-                        band_stretched = band_data
-                    print(f"  波段 {bands_to_keep[i]} 拉伸: [{vmin:.1f}, {vmax:.1f}] → [0, 255]")
+            for i, band_data in enumerate(bands_data):
+                band_float = band_data.astype(np.float32)
 
-                output_8bit[i] = band_stretched.astype(np.uint8)
+                # 排除0值（通常是背景）不参与统计，避免拉伸错误
+                valid_mask = band_float > 0
+                if valid_mask.any():
+                    p_low, p_high = np.percentile(band_float[valid_mask], (lower_percent, upper_percent))
+                else:
+                    p_low, p_high = 0, 255
 
-            # 转换为HWC格式（Height, Width, Channels）
+                # 避免分母为0
+                if p_high > p_low:
+                    # 线性拉伸并截断
+                    stretched = (band_float - p_low) / (p_high - p_low)
+                    stretched = np.clip(stretched, 0, 1)
+
+                    # --- 步骤2: Gamma 校正 (非线性增强) ---
+                    # Gamma < 1.0 会提亮暗部，Gamma > 1.0 会压暗并增加对比度
+                    # 对于卫星影像，通常先归一化，再做Gamma
+                    if gamma != 1.0:
+                        stretched = np.power(stretched, 1.0 / gamma)
+
+                    output_8bit[i] = (stretched * 255).astype(np.uint8)
+                else:
+                    output_8bit[i] = band_float.astype(np.uint8)
+
+            dataset = None  # 释放显存/内存
+
+            # 转换为 PIL Image 对象
             output_rgb = np.transpose(output_8bit, (1, 2, 0))
-
-            # 使用PIL保存为PNG
-            from PIL import Image
             img = Image.fromarray(output_rgb, mode='RGB')
-            img.save(str(output_path), 'PNG', compress_level=6)
 
-            # 关闭数据集
-            dataset = None
+            # --- 步骤3: PIL 后处理增强 ---
+
+            # A. 提升色彩饱和度 (去除雾霾感)
+            if saturation != 1.0:
+                enhancer = ImageEnhance.Color(img)
+                img = enhancer.enhance(saturation)
+                print(f"  色彩增强: {saturation}x")
+
+            # B. 提升对比度 (可选，如果Gamma不够的话)
+            # enhancer = ImageEnhance.Contrast(img)
+            # img = enhancer.enhance(1.1)
+
+            # C. 锐化处理 (Unsharp Mask)
+            if sharpen:
+                # 使用非锐化掩模(Unsharp Mask)比普通的 SHARPEN 滤镜控制力更好
+                # radius: 模糊半径, percent: 锐化强度, threshold: 阈值
+                img = img.filter(ImageFilter.UnsharpMask(radius=1.5, percent=120, threshold=3))
+                print(f"  已应用锐化滤镜")
+
+            # 保存
+            output_filename = tif_file.stem + '_enhanced.png'
+            output_path = Path(output_folder) / output_filename
+            img.save(str(output_path), 'PNG', compress_level=6)
 
             print(f"  ✓ 已保存: {output_path}")
 
@@ -118,33 +113,25 @@ def convert_4band_to_3band_geotiff(input_folder, output_folder, bands_to_keep=[1
             import traceback
             traceback.print_exc()
 
-    print("\n=" * 50)
-    print("转换完成!")
-    print(f"输出目录: {output_folder}")
+    print("\n" + "=" * 50)
+    print("增强转换完成!")
 
 
-# 使用示例
 if __name__ == "__main__":
-    # 设置输入和输出文件夹路径
-    input_folder = r"C:\Users\liuku\Desktop\images"  # 输入文件夹
-    output_folder = r"C:\Users\liuku\Desktop\images_rgb"  # 输出文件夹
+    # 路径设置
+    input_folder = r"C:\Users\liuku\Desktop\datasets\images"
+    output_folder = r"C:\Users\liuku\Desktop\datasets\images_rgb"
 
-    # GF2卫星波段说明:
-    # 波段1: Blue (蓝色, 450-520nm)
-    # 波段2: Green (绿色, 520-590nm)
-    # 波段3: Red (红色, 630-690nm)
-    # 波段4: Near Infrared (近红外, 770-890nm)
-
-    # 转换为RGB PNG图像（保留波段1,2,3）
-    # print("=" * 50)
-    # print("GF2 4波段 → 3波段PNG 转换器")
-    # print("=" * 50)
-
-    convert_4band_to_3band_geotiff(
+    # 调用函数
+    convert_4band_to_3band_enhanced(
         input_folder,
         output_folder,
-        bands_to_keep=[3, 2, 1],  # 保留蓝、绿、红波段
-        stretch_method='percentile'  # 使用分位数拉伸获得更好的视觉效果
-    )
+        bands_to_keep=[3, 2, 1],  # RGB顺序
 
-    print("\n提示: 输出为PNG格式，使用了对比度拉伸以获得更好的显示效果")
+        # --- 关键调整参数 ---
+        lower_percent=1.0,  # 稍微放宽一点下限，去除极黑噪点
+        upper_percent=99.0,  # 稍微放宽一点上限，去除极亮噪点
+        gamma=1.1,  # 1.0-1.2之间尝试。如果图片太黑，尝试改为 0.8
+        saturation=1.4,  # 增加饱和度，让色彩更鲜艳
+        sharpen=True  # 开启锐化
+    )
