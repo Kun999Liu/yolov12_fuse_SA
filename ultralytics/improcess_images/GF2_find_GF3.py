@@ -79,9 +79,9 @@ def crop_by_small_tif(big_tif, small_folder, out_folder, nodata_threshold=0.75):
 
         # ===== 检查是否在大影像经纬度范围内 =====
         if (lon_min < min(big_lon_min, big_lon_max) or
-            lon_max > max(big_lon_min, big_lon_max) or
-            lat_min < min(big_lat_min, big_lat_max) or
-            lat_max > max(big_lat_min, big_lat_max)):
+                lon_max > max(big_lon_min, big_lon_max) or
+                lat_min < min(big_lat_min, big_lat_max) or
+                lat_max > max(big_lat_min, big_lat_max)):
             print(f"⚠️ {fname} 超出大影像范围，跳过。")
             continue
 
@@ -116,12 +116,13 @@ def crop_by_small_tif(big_tif, small_folder, out_folder, nodata_threshold=0.75):
             if nodata_ratio > nodata_threshold:
                 out_ds = None
                 os.remove(out_path)
-                print(f"⚠️ {fname} 裁剪结果超过 {nodata_threshold*100:.1f}% NoData，已删除。")
+                print(f"⚠️ {fname} 裁剪结果超过 {nodata_threshold * 100:.1f}% NoData，已删除。")
                 continue
 
         print(f"✅ 裁剪完成: {out_path}")
 
     print("🎉 所有裁剪任务完成！")
+
 
 def filter_by_nodata(folder, nodata_threshold=0.75):
     """
@@ -154,9 +155,10 @@ def filter_by_nodata(folder, nodata_threshold=0.75):
         if nodata_ratio > nodata_threshold:
             ds = None
             os.remove(fpath)
-            print(f"⚠️ {fname} 的NoData比例 {nodata_ratio*100:.1f}% > {nodata_threshold*100:.0f}%，已删除。")
+            print(f"⚠️ {fname} 的NoData比例 {nodata_ratio * 100:.1f}% > {nodata_threshold * 100:.0f}%，已删除。")
         else:
-            print(f"✅ {fname} 保留 (NoData比例 {nodata_ratio*100:.1f}%)")
+            print(f"✅ {fname} 保留 (NoData比例 {nodata_ratio * 100:.1f}%)")
+
 
 def copy_common_images(folder1, folder2, output_folder):
     """
@@ -184,6 +186,7 @@ def copy_common_images(folder1, folder2, output_folder):
 
     print(f"已复制 {len(common_names)} 个相同文件到 {output_folder}")
 
+
 def remove_empty_files(folder):
     """
     删除指定文件夹下大小为 0 字节的文件
@@ -207,14 +210,42 @@ def remove_empty_files(folder):
         for f in removed_files:
             print("  " + f)
 
+def compare_folders(folder1_path, folder2_path):
+    # 获取两个文件夹中的文件名列表
+    try:
+        files1 = set(os.listdir(folder1_path))
+        files2 = set(os.listdir(folder2_path))
+    except FileNotFoundError as e:
+        print(f"错误：找不到路径 - {e}")
+        return
+
+    # 找出仅在文件夹1中存在的文件 (差集)
+    only_in_1 = files1 - files2
+
+    # 找出仅在文件夹2中存在的文件 (差集)
+    only_in_2 = files2 - files1
+
+    # 打印结果
+    print(f"--- 仅在 {folder1_path} 中存在的文件 ({len(only_in_1)}个) ---")
+    for f in only_in_1:
+        print(f)
+
+    print(f"\n--- 仅在 {folder2_path} 中存在的文件 ({len(only_in_2)}个) ---")
+    for f in only_in_2:
+        print(f)
+
+
+
 if __name__ == "__main__":
-    # big_tif = r"E:\GF3_TIF\GF3_KAS_UFS_011121_E93.4_N42.6_20180920_L1A_DH_L10003466944_db_warp_warp.tif" # 大影像路径
-    # small_folder = r"D:\数据\datasets\images_tif" # 小切片所在文件夹
-    # out_folder = r"D:\数据\datasets\image_sar"  # 输出文件夹
+    # big_tif = r"E:\GF3\GF-DB-TIF-NEW\GF3_KAS_UFS_028901_E98.6_N39.6_20220204_L1A_DH_L10006271551_Corrected.tif" # 大影像路径
+    # small_folder = r"E:\GF2\GF2_PMS2_E98.5_N39.7_20250603_L1A14676992001_fuse_tiles" # 小切片所在文件夹
+    # out_folder = r"E:\GF3\images-sar" # 输出文件夹
     # os.makedirs(out_folder, exist_ok=True)
     # crop_by_small_tif(big_tif, small_folder, out_folder)
     # copy_common_images(r"D:\数据\datasets\labels", r"D:\数据\datasets\images_sar", r"D:\数据\datasets\images_common_labels")
     # remove_empty_files(r"D:\OneDrive_files\OneDrive\GF2\labels")
     # filter_by_nodata(r"D:\data\images_common_tif", nodata_threshold=0.5)
-    copy_common_images(r"F:\my_code\transmissiontower_7bands\images2\test\images", r"F:\my_code\TransMission\images\test\images", r"F:\my_code\TransMission\images2\test\images")
+    # copy_common_images(r"E:\GF3\images-sar", r"F:\new-TransmissionTower\images",r"F:\new-TransmissionTower\images2")
+    # --- 在这里修改你的文件夹路径 ---
 
+    compare_folders(r"F:\new-TransmissionTower\images", r"F:\new-TransmissionTower\images2")
