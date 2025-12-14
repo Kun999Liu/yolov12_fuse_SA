@@ -13,10 +13,10 @@ import shutil
 import random
 
 # 设置路径
-images_dir = r"F:\my_code\TransMission\images"
-labels_dir = r"F:\my_code\TransMission\labels"
+images_dir = r"F:\TransmissionTower\images"
+labels_dir = r"F:\TransmissionTower\labels"
 
-output_dir = r"F:\my_code\TransMission\datasets" # 输出总文件夹
+output_dir = r"F:\TransmissionTower\datasets" # 输出总文件夹
 
 # 设置划分比例
 train_ratio = 0.8

@@ -14,14 +14,14 @@ import xml.etree.ElementTree as ET
 
 # ================= 用户配置区 =================
 # 1. 这里放你那个“数值偏低”的 dB 影像文件夹
-INPUT_DB_FOLDER = r"C:\Users\liuku\Desktop\images"
+INPUT_DB_FOLDER = r"E:\GF3\image"
 
 # 2. 这里放原始数据的 XML 文件夹 (用于读取参数)
 # 脚本会根据文件名尝试自动匹配
-XML_FOLDER = r"E:\xml"
+XML_FOLDER = r"E:\GF3\GF3-tar\xml"
 
 # 3. 结果保存位置
-OUTPUT_FOLDER = r"C:\Users\liuku\Desktop\images-new"
+OUTPUT_FOLDER = r"E:\GF3\image"
 
 
 # ===========================================

@@ -12,9 +12,9 @@ import os
 import shutil
 
 # 文件夹路径（自己修改成实际路径）
-txt_folder = r"E:\TransmissionTower\datasets\labels\train"
-png_folder = r"E:\TransmissionTower\datasets\images2\train"
-output_folder = r"E:\TransmissionTower\datasets\images2\train_new"
+txt_folder = r"D:\TransmissionTower\datasets\labels\test"
+png_folder = r"D:\TransmissionTower\images2"
+output_folder = r"D:\TransmissionTower\datasets\images2\test"
 
 # 创建输出文件夹
 os.makedirs(output_folder, exist_ok=True)
