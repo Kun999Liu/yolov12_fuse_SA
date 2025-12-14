@@ -59,66 +59,92 @@ __all__ = (
 
 # from ..FADformer import Fused_Fourier_Conv_Mixer
 
+class PGAM(nn.Module):
+    """
+    Physics-Guided Attention Module (PGAM)
+    针对性地利用由 SpectralStem 传递下来的物理通道信息进行二次增强。
+    """
+
+    def __init__(self, c1, c2):
+        super().__init__()
+        self.conv = Conv(c1, c2, 1)  # 降维/调整通道
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        # x: 来自上一层 A2C2f 的特征图 (B, C, H, W)
+
+        # 假设我们知道 SpectralStem 把 MNDBI/Intensity 放在了特定通道，
+        # 但在深层，通道顺序已经乱了。
+        # 所以，我们这里用一种“统计学”方法来重新寻找“高亮/金属”区域：
+
+        # 1. 空间最大池化 (寻找局部最亮/反射率最高的点，通常是金属)
+        # 这对应“全波段强度”特征在深层的映射
+        x_max, _ = torch.max(x, dim=1, keepdim=True)  # (B, 1, H, W)
+
+        # 2. 空间平均池化 (背景信息)
+        x_avg = torch.mean(x, dim=1, keepdim=True)  # (B, 1, H, W)
+
+        # 3. 生成物理引导掩码 (Attention Mask)
+        # 我们认为：高响应区域(x_max) 且 差异显著的区域 可能是金属
+        attn_map = self.sigmoid(x_max - x_avg)
+
+        # 4. 针对性增强：将 Mask 乘回原特征
+        return x * attn_map
+
 class SpectralStem(nn.Module):
     """
-    SpectralStem: A specialized input layer for 4-channel (BGR-NIR) data.
-    It computes physical indices (MNDBI variant, Intensity) on the fly and fuses them
-    before the initial feature extraction.
+    SpectralStem v2 (Corrected for B-G-R-NIR Order)
 
-    Input:  (B, 4, H, W) -> [Blue, Green, Red, NIR] (Assuming this order, adjustable)
-    Output: (B, out_channels, H/2, W/2) -> Standard YOLO stem output (stride 2)
+    Input:  (B, 4, H, W)
+    Order:  [Index 0: Blue, Index 1: Green, Index 2: Red, Index 3: NIR]
+
+    Output: (B, c2, H/2, W/2) -> Standard YOLO stem output
     """
 
     def __init__(self, c1=4, c2=64, k=3, s=2):
-        """
-        Args:
-            c1 (int): Input channels (default 4 for R,G,B,NIR).
-            c2 (int): Output channels (usually 64 for YOLOv12 backbone start).
-            k (int): Kernel size.
-            s (int): Stride.
-        """
         super().__init__()
-        # 我们会计算2个额外特征，所以输入卷积的通道数是 c1 + 2
-        self.features_c = c1 + 2
+        # 输入通道 = 原始4通道 + MNDBI(1) + Intensity(1) + NDVI(1) = 7通道
+        self.features_c = c1 + 3
 
-        # 定义一个标准卷积，将融合后的6通道数据映射到 c2 (e.g., 64)
+        # 定义卷积层
         self.conv = Conv(self.features_c, c2, k, s)
 
     def forward(self, x):
         """
         Args:
             x (torch.Tensor): Input image batch of shape (B, 4, H, W).
-                              Expects order: [Red, Green, Blue, NIR]
+            EXPECTED ORDER: Blue, Green, Red, NIR
         """
-        # 1. 拆分通道 (假设输入顺序为 R, G, B, NIR)
-        # 注意：如果你的数据加载器是 BGR 顺序，请调整这里的索引
-        b = x[:, 0:1, :, :]
-        g = x[:, 1:2, :, :]
-        r = x[:, 2:3, :, :]
-        nir = x[:, 3:4, :, :]
+        # 1. 按照 B-G-R-NIR 顺序拆分通道
+        # ---------------------------------------------------------
+        b = x[:, 0:1, :, :]  # Blue  (Index 0)
+        g = x[:, 1:2, :, :]  # Green (Index 1)
+        r = x[:, 2:3, :, :]  # Red   (Index 2)
+        nir = x[:, 3:4, :, :]  # NIR   (Index 3)
+        # ---------------------------------------------------------
 
-        # -----------------------------------------------------------
-        # 特征 1: 修正归一化差异建筑指数 (MNDBI) 变体
-        # 原始公式通常涉及 SWIR，这里使用 NIR 替代以突出高反射人造物(金属/混凝土)
-        # Formula: (NIR - Blue) / (NIR + Blue + epsilon)
-        # -----------------------------------------------------------
-        epsilon = 1e-8
+        epsilon = 1e-8  # 防止除零
+
+        # --- 特征 1: MNDBI 变体 (金属/建筑敏感) ---
+        # 公式: (NIR - Blue) / (NIR + Blue)
+        # 注意：这里利用 Index 3 (NIR) 和 Index 0 (Blue)
         mndbi = (nir - b) / (nir + b + epsilon)
 
-        # -----------------------------------------------------------
-        # 特征 2: 亮度与纹理复合特征 (Intensity)
-        # Formula: sqrt((R^2 + G^2 + B^2 + N^2) / 4)
-        # 金属通常在全波段具有高反射率(高亮度)，这能作为强先验
-        # -----------------------------------------------------------
-        intensity = torch.sqrt((r ** 2 + g ** 2 + b ** 2 + nir ** 2) / 4.0 + epsilon)
+        # --- 特征 2: 全波段强度 (高光/金属敏感) ---
+        # RMS Intensity
+        intensity = torch.sqrt((b ** 2 + g ** 2 + r ** 2 + nir ** 2) / 4.0 + epsilon)
 
-        # 3. 特征融合 (Concatenation)
-        # 将原始4通道 + MNDBI + Intensity 拼接 -> 6通道
-        # Shape: (B, 6, H, W)
-        x_fused = torch.cat([x, mndbi, intensity], dim=1)
+        # --- 特征 3: NDVI (植被抑制) ---
+        # 公式: (NIR - Red) / (NIR + Red)
+        # 注意：这里利用 Index 3 (NIR) 和 Index 2 (Red)
+        # 如果搞错成 Blue，NDVI 就失效了，所以这一步修正很关键
+        ndvi = (nir - r) / (nir + r + epsilon)
 
-        # 4. 通过卷积层提取特征并下采样
-        # Shape: (B, c2, H/2, W/2)
+        # --- 特征融合 ---
+        # 将原始数据与3个物理指数拼接 -> 7通道输入
+        x_fused = torch.cat([x, mndbi, intensity, ndvi], dim=1)
+
+        # --- 卷积提取 ---
         return self.conv(x_fused)
 
 class NDSI_Layer(nn.Module):
