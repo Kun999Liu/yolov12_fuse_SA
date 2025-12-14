@@ -12,7 +12,7 @@ from .conv import Conv, DWConv, GhostConv, LightConv, RepConv, autopad
 from .transformer import TransformerBlock
 
 __all__ = (
-    "FFCM",
+    # "FFCM",
     "SA_C1",
     "SA",
     "ECASA",
@@ -57,8 +57,69 @@ __all__ = (
     "TorchVision",
 )
 
-from ..FADformer import Fused_Fourier_Conv_Mixer
+# from ..FADformer import Fused_Fourier_Conv_Mixer
 
+class SpectralStem(nn.Module):
+    """
+    SpectralStem: A specialized input layer for 4-channel (BGR-NIR) data.
+    It computes physical indices (MNDBI variant, Intensity) on the fly and fuses them
+    before the initial feature extraction.
+
+    Input:  (B, 4, H, W) -> [Blue, Green, Red, NIR] (Assuming this order, adjustable)
+    Output: (B, out_channels, H/2, W/2) -> Standard YOLO stem output (stride 2)
+    """
+
+    def __init__(self, c1=4, c2=64, k=3, s=2):
+        """
+        Args:
+            c1 (int): Input channels (default 4 for R,G,B,NIR).
+            c2 (int): Output channels (usually 64 for YOLOv12 backbone start).
+            k (int): Kernel size.
+            s (int): Stride.
+        """
+        super().__init__()
+        # 我们会计算2个额外特征，所以输入卷积的通道数是 c1 + 2
+        self.features_c = c1 + 2
+
+        # 定义一个标准卷积，将融合后的6通道数据映射到 c2 (e.g., 64)
+        self.conv = Conv(self.features_c, c2, k, s)
+
+    def forward(self, x):
+        """
+        Args:
+            x (torch.Tensor): Input image batch of shape (B, 4, H, W).
+                              Expects order: [Red, Green, Blue, NIR]
+        """
+        # 1. 拆分通道 (假设输入顺序为 R, G, B, NIR)
+        # 注意：如果你的数据加载器是 BGR 顺序，请调整这里的索引
+        b = x[:, 0:1, :, :]
+        g = x[:, 1:2, :, :]
+        r = x[:, 2:3, :, :]
+        nir = x[:, 3:4, :, :]
+
+        # -----------------------------------------------------------
+        # 特征 1: 修正归一化差异建筑指数 (MNDBI) 变体
+        # 原始公式通常涉及 SWIR，这里使用 NIR 替代以突出高反射人造物(金属/混凝土)
+        # Formula: (NIR - Blue) / (NIR + Blue + epsilon)
+        # -----------------------------------------------------------
+        epsilon = 1e-8
+        mndbi = (nir - b) / (nir + b + epsilon)
+
+        # -----------------------------------------------------------
+        # 特征 2: 亮度与纹理复合特征 (Intensity)
+        # Formula: sqrt((R^2 + G^2 + B^2 + N^2) / 4)
+        # 金属通常在全波段具有高反射率(高亮度)，这能作为强先验
+        # -----------------------------------------------------------
+        intensity = torch.sqrt((r ** 2 + g ** 2 + b ** 2 + nir ** 2) / 4.0 + epsilon)
+
+        # 3. 特征融合 (Concatenation)
+        # 将原始4通道 + MNDBI + Intensity 拼接 -> 6通道
+        # Shape: (B, 6, H, W)
+        x_fused = torch.cat([x, mndbi, intensity], dim=1)
+
+        # 4. 通过卷积层提取特征并下采样
+        # Shape: (B, c2, H/2, W/2)
+        return self.conv(x_fused)
 
 class NDSI_Layer(nn.Module):
     def __init__(self, dimension=1):
@@ -1465,7 +1526,7 @@ class A2C2f(nn.Module):
             return x + self.gamma.view(1, -1, 1, 1) * self.cv2(torch.cat(y, 1))
         return self.cv2(torch.cat(y, 1))
 
-class FFCM(C2f):
-    def __init__(self, c1, c2, n=1, shortcut=False, g=1, e=0.5):
-        super().__init__(c1, c2, n, shortcut, g, e)
-        self.m = nn.ModuleList(Fused_Fourier_Conv_Mixer(self.c) for _ in range(n))
+# class FFCM(C2f):
+#     def __init__(self, c1, c2, n=1, shortcut=False, g=1, e=0.5):
+#         super().__init__(c1, c2, n, shortcut, g, e)
+#         self.m = nn.ModuleList(Fused_Fourier_Conv_Mixer(self.c) for _ in range(n))

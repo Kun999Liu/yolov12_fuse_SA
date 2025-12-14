@@ -12,19 +12,19 @@ import os
 import shutil
 
 # 文件夹路径（自己修改成实际路径）
-txt_folder = r"C:\Users\liuku\Desktop\images_new"
-png_folder = r"C:\Users\liuku\Desktop\labels"
-output_folder = r"C:\Users\liuku\Desktop\labels_new"
+txt_folder = r"E:\TransmissionTower\datasets\labels\train"
+png_folder = r"E:\TransmissionTower\datasets\images2\train"
+output_folder = r"E:\TransmissionTower\datasets\images2\train_new"
 
 # 创建输出文件夹
 os.makedirs(output_folder, exist_ok=True)
 
 # 获取 txt 文件名（去掉后缀）
-txt_files = {os.path.splitext(f)[0] for f in os.listdir(txt_folder) if f.endswith(".tif")}
+txt_files = {os.path.splitext(f)[0] for f in os.listdir(txt_folder) if f.endswith(".txt")}
 
 # 遍历 png 文件夹，查找同名文件
 for file in os.listdir(png_folder):
-    if file.endswith(".png") or file.endswith(".txt"):
+    if file.endswith(".png") or file.endswith(".tif"):
         name = os.path.splitext(file)[0]
         if name in txt_files:  # 如果有同名 txt 文件
             src = os.path.join(png_folder, file)
