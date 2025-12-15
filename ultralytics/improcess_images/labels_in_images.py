@@ -184,9 +184,9 @@ def plot_paginated_with_labels(image_folder, label_folder, output_dir, satellite
 
 if __name__ == "__main__":
     # === 请修改这里的路径 ===
-    base_dir = r"D:\TransmissionTower\datasets\images2"
-    labels_dir = r"D:\TransmissionTower\datasets\labels"
-    output_dir = r"./checked_images"
+    base_dir = r"F:\TransmissionTower\datasets\images"
+    labels_dir = r"F:\TransmissionTower\datasets\labels"
+    output_dir = r"./checked_images_val"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -197,7 +197,7 @@ if __name__ == "__main__":
     # gf3_lbl = os.path.join(base_dir, "GF3_Labels")
 
     if os.path.exists(gf2_img):
-        plot_paginated_with_labels(gf2_img, gf2_lbl, output_dir, "GF3")
+        plot_paginated_with_labels(gf2_img, gf2_lbl, output_dir, "GF2")
 
     # if os.path.exists(gf3_img):
     #     plot_paginated_with_labels(gf3_img, gf3_lbl, "GF3")

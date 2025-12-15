@@ -102,7 +102,7 @@ def convert_4band_to_3band_enhanced(input_folder, output_folder, bands_to_keep=[
                 print(f"  已应用锐化滤镜")
 
             # 保存
-            output_filename = tif_file.stem + '_enhanced.png'
+            output_filename = tif_file.stem + '.png'
             output_path = Path(output_folder) / output_filename
             img.save(str(output_path), 'PNG', compress_level=6)
 
@@ -119,8 +119,8 @@ def convert_4band_to_3band_enhanced(input_folder, output_folder, bands_to_keep=[
 
 if __name__ == "__main__":
     # 路径设置
-    input_folder = r"C:\Users\liuku\Desktop\datasets\images"
-    output_folder = r"C:\Users\liuku\Desktop\datasets\images_rgb"
+    input_folder = r"D:\TransmissionTower\datasets\images\train"
+    output_folder = r"D:\TransmissionTower\datasets\images\train_rgb"
 
     # 调用函数
     convert_4band_to_3band_enhanced(

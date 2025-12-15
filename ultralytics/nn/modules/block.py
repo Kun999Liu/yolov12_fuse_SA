@@ -12,6 +12,8 @@ from .conv import Conv, DWConv, GhostConv, LightConv, RepConv, autopad
 from .transformer import TransformerBlock
 
 __all__ = (
+    "SpectralStem",
+    "PGAM",
     # "FFCM",
     "SA_C1",
     "SA",
@@ -62,34 +64,38 @@ __all__ = (
 class PGAM(nn.Module):
     """
     Physics-Guided Attention Module (PGAM)
-    针对性地利用由 SpectralStem 传递下来的物理通道信息进行二次增强。
+    物理引导注意力模块：利用特征图的统计特性（最大值/均值差）来寻找“潜在金属区域”。
     """
 
     def __init__(self, c1, c2):
         super().__init__()
-        self.conv = Conv(c1, c2, 1)  # 降维/调整通道
+        # 降维，减少计算量
+        self.conv_reduce = Conv(c1, c1 // 4, 1)
+        self.conv_expand = Conv(c1 // 4, c2, 1)
+
+        # 空间注意力生成器
+        # 输入2通道：1个是最大值(代表高亮金属)，1个是均值(代表背景)
+        self.spatial_conv = nn.Conv2d(2, 1, kernel_size=7, padding=3, bias=False)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
-        # x: 来自上一层 A2C2f 的特征图 (B, C, H, W)
+        # x: (B, C, H, W)
 
-        # 假设我们知道 SpectralStem 把 MNDBI/Intensity 放在了特定通道，
-        # 但在深层，通道顺序已经乱了。
-        # 所以，我们这里用一种“统计学”方法来重新寻找“高亮/金属”区域：
-
-        # 1. 空间最大池化 (寻找局部最亮/反射率最高的点，通常是金属)
-        # 这对应“全波段强度”特征在深层的映射
+        # 1. 假设高亮/高反射率特性在深层依然表现为特征值较大
+        # 沿通道方向求最大值 -> 提取最显著的特征点 (Potential Metal)
         x_max, _ = torch.max(x, dim=1, keepdim=True)  # (B, 1, H, W)
 
-        # 2. 空间平均池化 (背景信息)
+        # 2. 沿通道方向求均值 -> 背景水平
         x_avg = torch.mean(x, dim=1, keepdim=True)  # (B, 1, H, W)
 
-        # 3. 生成物理引导掩码 (Attention Mask)
-        # 我们认为：高响应区域(x_max) 且 差异显著的区域 可能是金属
-        attn_map = self.sigmoid(x_max - x_avg)
+        # 3. 物理引导掩码生成 (Physics-Guided Mask)
+        # 将 max 和 avg 拼接，让卷积层学习 "显著高于背景" 的区域
+        scale_stats = torch.cat([x_max, x_avg], dim=1)
+        attention_map = self.sigmoid(self.spatial_conv(scale_stats))
 
-        # 4. 针对性增强：将 Mask 乘回原特征
-        return x * attn_map
+        # 4. 残差连接 + 注意力加权
+        # 原特征 * (1 + attention) 或者 原特征 * attention + 原特征
+        return x * attention_map + x
 
 class SpectralStem(nn.Module):
     """
