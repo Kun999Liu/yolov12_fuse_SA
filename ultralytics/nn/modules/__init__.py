@@ -19,7 +19,7 @@ Example:
 
 from .block import (
     SpectralStem,
-    PGAM,
+    # PGAM,
     # FFCM,
     SSAM,
     SpectralStem,

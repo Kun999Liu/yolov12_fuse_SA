@@ -23,11 +23,12 @@ results = model.train(data=r'./TransmissionTower.yaml',
                       patience=100,
                       imgsz=416,
                       workers=8,
-                      device="cpu",
+                      device="0",
                       batch=16,
                       name="test",
                       amp=False,
                       # pretrained=False,  # 不加载官方权重
+                      # deterministic=False
                       )
 
 
