@@ -76,6 +76,38 @@ def read_image(path, mode, **kwargs):
         raise ValueError(f"Unsupported mode: {mode}")
 
 
+def normalize_percentile(img_array):
+    """
+    分波段 2% 线性拉伸 - 专为 YOLO-PI 物理特征设计
+    """
+    bands, h, w = img_array.shape
+    out_img = np.zeros_like(img_array, dtype=np.uint8)
+
+    # 将数据转为 float32 进行计算，避免溢出
+    img_float = img_array.astype(np.float32)
+
+    for i in range(bands):
+        band = img_float[i, :, :]
+
+        # 1. 计算 2% 和 98% 分位点 (剔除异常值)
+        # 这种方法会自动忽略极亮(云)和极暗(阴影)的噪点
+        p2 = np.percentile(band, 2)
+        p98 = np.percentile(band, 98)
+
+        # 2. 拉伸计算
+        # 将 [p2, p98] 映射到 [0, 255]
+        if p98 - p2 == 0:
+            out_img[i, :, :] = 0
+        else:
+            scale = 255.0 / (p98 - p2)
+            band_scaled = (band - p2) * scale
+
+            # 3. 截断并转为 uint8
+            band_clipped = np.clip(band_scaled, 0, 255)
+            out_img[i, :, :] = band_clipped.astype(np.uint8)
+
+    return out_img
+
 def readTif(img_file_path, bands=3):
     """
     读取栅格数据，将其转换成对应数组
@@ -103,13 +135,17 @@ def readTif(img_file_path, bands=3):
         img_array = img_array[:3, :, :].copy()  # 取R G B三个波段
         im_bands = 3
     elif im_bands >= 4 and bands == 4:
-        img_array = img_array[:4, :, :]
+        img_array = img_array[:4, :, :].copy()
         im_bands = 4
-    '''校正后处理'''
-    imgScale = (img_array - np.min(img_array)) / (np.max(img_array) - np.min(img_array))
 
-    img = np.round(imgScale * 255).astype(np.uint8)
-    # TIS GIU 使用
+    # --- 【关键修改】使用 2% 拉伸替代 Min-Max ---
+    # 这一步能显著增强金属目标的 Intensity 特征
+    img = normalize_percentile(img_array)
+    '''校正后处理'''
+    # imgScale = (img_array - np.min(img_array)) / (np.max(img_array) - np.min(img_array))
+    #
+    # img = np.round(imgScale * 255).astype(np.uint8)
+    # # TIS GIU 使用
     img = np.transpose(img, (1, 2, 0))
     # img = histEqualize(img)
     return im_width, im_height, im_bands, projection, geotrans, img

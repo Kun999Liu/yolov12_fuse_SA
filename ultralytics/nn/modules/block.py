@@ -13,6 +13,8 @@ from .transformer import TransformerBlock
 
 __all__ = (
     # "FFCM",
+    "SpectralStem",
+    "SSAM",
     "SA_C1",
     "SA",
     "ECASA",
@@ -58,38 +60,123 @@ __all__ = (
 )
 
 # from ..FADformer import Fused_Fourier_Conv_Mixer
-
-class PGAM(nn.Module):
+class P_ChannelAttention(nn.Module):
     """
-    Physics-Guided Attention Module (PGAM)
-    针对性地利用由 SpectralStem 传递下来的物理通道信息进行二次增强。
+    物理增强的通道注意力：同时关注背景(Avg)和高亮目标(Max)。
+    针对金属目标检测，Max Pool 能更好地保留高反射率特征。
     """
 
-    def __init__(self, c1, c2):
+    def __init__(self, channels, reduction=16):
         super().__init__()
-        self.conv = Conv(c1, c2, 1)  # 降维/调整通道
+        # 使得中间层通道数至少为 4，防止过小
+        mid_channels = max(channels // reduction, 4)
+
+        self.max_pool = nn.AdaptiveMaxPool2d(1)
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+
+        # 共享感知层 (Shared MLP)
+        self.mlp = nn.Sequential(
+            nn.Conv2d(channels, mid_channels, 1, bias=False),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(mid_channels, channels, 1, bias=False)
+        )
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
-        # x: 来自上一层 A2C2f 的特征图 (B, C, H, W)
+        # 分别计算 Max 和 Avg 分支
+        max_out = self.mlp(self.max_pool(x))
+        avg_out = self.mlp(self.avg_pool(x))
+        # 融合两者 (经典 CBAM 做法，比单纯 Avg 更适合小目标)
+        return self.sigmoid(max_out + avg_out)
 
-        # 假设我们知道 SpectralStem 把 MNDBI/Intensity 放在了特定通道，
-        # 但在深层，通道顺序已经乱了。
-        # 所以，我们这里用一种“统计学”方法来重新寻找“高亮/金属”区域：
 
-        # 1. 空间最大池化 (寻找局部最亮/反射率最高的点，通常是金属)
-        # 这对应“全波段强度”特征在深层的映射
-        x_max, _ = torch.max(x, dim=1, keepdim=True)  # (B, 1, H, W)
+class P_SpatialAttention(nn.Module):
+    """
+    SSAM 增强的空间注意力：融入 '最大值-均值' 的物理差异先验。
+    """
 
-        # 2. 空间平均池化 (背景信息)
-        x_avg = torch.mean(x, dim=1, keepdim=True)  # (B, 1, H, W)
+    def __init__(self, kernel_size=7):
+        super().__init__()
+        assert kernel_size in {3, 7}, "kernel size must be 3 or 7"
+        padding = 3 if kernel_size == 7 else 1
 
-        # 3. 生成物理引导掩码 (Attention Mask)
-        # 我们认为：高响应区域(x_max) 且 差异显著的区域 可能是金属
-        attn_map = self.sigmoid(x_max - x_avg)
+        # 输入通道变为 3：Max, Mean, 以及 Saliency(Max-Mean)
+        self.conv = nn.Conv2d(3, 1, kernel_size, padding=padding, bias=False)
+        self.sigmoid = nn.Sigmoid()
 
-        # 4. 针对性增强：将 Mask 乘回原特征
-        return x * attn_map
+    def forward(self, x):
+        # 1. 空间最大池化 (捕捉高亮金属点)
+        x_max, _ = torch.max(x, dim=1, keepdim=True)
+
+        # 2. 空间平均池化 (捕捉背景水平)
+        x_avg = torch.mean(x, dim=1, keepdim=True)
+
+        # 3. 计算物理显著性 (SSAM 核心逻辑)
+        # 差异越大，代表该点在某些波段具有极高的特异性反射
+        x_saliency = x_max - x_avg
+
+        # 4. 特征融合与卷积学习
+        # 将物理先验(Saliency)与统计特征(Max, Avg)拼接，让卷积层学习如何利用这些信息
+        x_cat = torch.cat([x_max, x_avg, x_saliency], dim=1)
+
+        # 生成空间掩码
+        return self.sigmoid(self.conv(x_cat))
+
+
+class SSAM(nn.Module):
+    """
+    P-CBAM: Physics-Augmented Convolutional Block Attention Module
+    结合了 SSAM 的物理显著性思想与 CBAM 的双重注意力架构。
+    """
+
+    def __init__(self, c1, kernel_size=7):
+        """
+        Args:
+            c1 (int): 输入通道数
+            kernel_size (int): 空间注意力的卷积核大小
+        """
+        super().__init__()
+        self.channel_attention = P_ChannelAttention(c1)
+        self.spatial_attention = P_SpatialAttention(kernel_size)
+
+    def forward(self, x):
+        # 1. 通道注意力：筛选对金属敏感的特征通道 (如 Intensity, MNDBI)
+        out = x * self.channel_attention(x)
+
+        # 2. 空间注意力：基于物理显著性锁定目标位置
+        out = out * self.spatial_attention(out)
+        return out
+
+# class SSAM(nn.Module):
+#     """
+#     针对性地利用由 SpectralStem 传递下来的物理通道信息进行二次增强。
+#     """
+# #  SSAM (Spectral Saliency Attention Module)
+#     def __init__(self, c1, c2):
+#         super().__init__()
+#         self.conv = Conv(c1, c2, 1)  # 降维/调整通道
+#         self.sigmoid = nn.Sigmoid()
+#
+#     def forward(self, x):
+#         # x: 来自上一层 A2C2f 的特征图 (B, C, H, W)
+#
+#         # 假设我们知道 SpectralStem 把 MNDBI/Intensity 放在了特定通道，
+#         # 但在深层，通道顺序已经乱了。
+#         # 所以，我们这里用一种“统计学”方法来重新寻找“高亮/金属”区域：
+#
+#         # 1. 空间最大池化 (寻找局部最亮/反射率最高的点，通常是金属)
+#         # 这对应“全波段强度”特征在深层的映射
+#         x_max, _ = torch.max(x, dim=1, keepdim=True)  # (B, 1, H, W)
+#
+#         # 2. 空间平均池化 (背景信息)
+#         x_avg = torch.mean(x, dim=1, keepdim=True)  # (B, 1, H, W)
+#
+#         # 3. 生成物理引导掩码 (Attention Mask)
+#         # 我们认为：高响应区域(x_max) 且 差异显著的区域 可能是金属
+#         attn_map = self.sigmoid(x_max - x_avg)
+#
+#         # 4. 针对性增强：将 Mask 乘回原特征
+#         return x * attn_map
 
 class SpectralStem(nn.Module):
     """

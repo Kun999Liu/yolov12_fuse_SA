@@ -19,6 +19,8 @@ Example:
 
 from .block import (
     # FFCM,
+    SSAM,
+    SpectralStem,
     SA_C1,
     SA,
     ECASA,
