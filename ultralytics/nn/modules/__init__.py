@@ -18,6 +18,8 @@ Example:
 """
 
 from .block import (
+    SpectralStem,
+    PGAM,
     # FFCM,
     SSAM,
     SpectralStem,
@@ -96,6 +98,8 @@ from .transformer import (
 )
 
 __all__ = (
+    "SpectralStem",
+    "PGAM",
     "SA_C1",
     "SA",
     "ECASA",

@@ -56,7 +56,7 @@ def read_image(path, mode, **kwargs):
         **kwargs: 其他参数
     '''
     '''bands: 波段数默认为加载3波段图像'''
-    bands = kwargs.get("bands", 3)
+    bands = kwargs.get("bands", 4)
 
     if mode == "tif":
         if path.lower().endswith(".tif"):

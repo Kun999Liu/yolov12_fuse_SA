@@ -10,8 +10,10 @@ from pathlib import Path
 import thop
 import torch
 import torch.nn as nn
-'''导入自定义模块 SA_C1 和 SA'''
+'''导入自定义模块'''
 from ultralytics.nn.modules import (
+    SpectralStem,
+    PGAM,
     SA_C1,
     SA,
     AIFI,
@@ -1049,6 +1051,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C2fCIB,
             A2C2f,
             # FFCM,
+            # SpectralStem,
+            # PGAM
         }:
             c1, c2 = ch[f], args[0]
             if c2 != nc:  # if c2 not equal to number of classes (i.e. for Classify() output)
@@ -1077,6 +1081,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                 C2PSA,
                 A2C2f,
                 # FFCM,
+                # SpectralStem,
+                # PGAM
             }:
                 args.insert(2, n)  # number of repeats
                 n = 1
@@ -1089,6 +1095,20 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                 if scale in "lx":  # for L/X sizes
                     args.append(True)
                     args.append(1.5)
+        elif m is SpectralStem:
+            # 获取输入通道 c1 和配置中的输出通道 c2
+            c1, c2 = ch[f], args[0]
+            # 同样应用 width_multiple 进行通道缩放 (make_divisible)
+            c2 = make_divisible(min(c2, max_channels) * width, 8)
+
+            # 构造 args: [c1, c2, k, s]
+            # YAML 里通常写 [64, 3, 2]，所以 args[1:] 对应 [3, 2]
+            # 最终 args = [c1, c2, 3, 2]
+            args = [c1, c2, *args[1:]]
+        elif m is PGAM:
+            c1, c2 = ch[f], args[0]
+            c2 = make_divisible(min(c2, max_channels) * width, 8)
+            args = [c1, c2]  # PGAM 只需要 c1, c2
         elif m is AIFI:
             args = [ch[f], *args]
         elif m in {HGStem, HGBlock}:
