@@ -19,16 +19,16 @@ model = YOLO(r"./yolo12_SpectralStem.yaml")
 #D:\Git\yolov12_fuse_SA\ultralytics\cfg\models\v10\yolov10m_fuse_ndsi.yaml
 # Train the model on the COCO8 example dataset for 100 epochs
 results = model.train(data=r'./TransmissionTower.yaml',
-                      epochs=1,
+                      epochs=300,
                       patience=100,
-                      imgsz=416,
+                      imgsz=224,
                       workers=8,
                       device="0",
                       batch=16,
                       name="test",
                       amp=False,
                       # pretrained=False,  # 不加载官方权重
-                      # deterministic=False
+                      deterministic=False
                       )
 
 

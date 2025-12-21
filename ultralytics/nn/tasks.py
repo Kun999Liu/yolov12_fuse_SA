@@ -1108,16 +1108,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         elif m is SSAM:
             c1, c2 = ch[f], args[0]
             # c2 = make_divisible(min(c2, max_channels) * width, 8)
-            # args = [c1, c2]  # PGAM 只需要 c1, c2
-            if c2 != c1:
-                # 这一行只是为了打印日志好看，或者你可以选择抛出警告
-                # LOGGER.info(f"Warning: SSAM in yaml expects {c2} but keeps {c1} channels.")
-                c2 = c1
-
-                # SSAM 初始化只需要输入通道 c1 和 kernel_size
-                # 假设 args 第二个参数是 kernel_size，如果没有则默认为 7
-            k = args[1] if len(args) > 1 else 7
-            args = [c1, k]
+            c2 = c1
+            args = [c1, 3]
         elif m is AIFI:
             args = [ch[f], *args]
         elif m in {HGStem, HGBlock}:
